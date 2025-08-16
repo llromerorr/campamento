@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campamento 2025 - Gestión de Asistentes</title>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #c0392b;
+            --info: #2980b9;
+            --purple: #9b59b6;
+            --border-radius: 12px;
+            --box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9f2f6 100%);
+            color: var(--dark);
+            line-height: 1.7;
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), #1a2530);
+            color: white;
+            padding: 2.5rem 0;
+            text-align: center;
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 Q50,15 100,0 L100,100 Q50,85 0,100 Z" fill="rgba(255,255,255,0.15)"/></svg>');
+            background-size: 100% 100%;
+            opacity: 0.3;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+            position: relative;
+            font-weight: 300;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 25px;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem 1.8rem;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border-top: 5px solid var(--secondary);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+        }
+
+        .stat-card h3 {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            margin-bottom: 0.8rem;
+        }
+
+        .stat-card .value {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 15px 0;
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+        }
+
+        .stat-card .icon {
+            font-size: 2.8rem;
+            margin-bottom: 20px;
+            color: var(--secondary);
+            opacity: 0.9;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2.5rem;
+        }
+
+        .chart-container h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--primary);
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .chart-container h2::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 5px;
+            background: var(--secondary);
+            border-radius: 3px;
+        }
+
+        .filters-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2.5rem;
+        }
+
+        .filters-section h2 {
+            margin-bottom: 1.8rem;
+            color: var(--primary);
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .filters-section h2::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100px;
+            height: 5px;
+            background: var(--secondary);
+            border-radius: 3px;
+        }
+
+        .filter-group {
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px dashed #e0e6e9;
+        }
+
+        .filter-group:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .filter-group h3 {
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .filter-group h3 i {
+            color: var(--secondary);
+            background: rgba(52, 152, 219, 0.15);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 18px;
+        }
+
+        .filter-btn {
+            background: var(--light);
+            border: 2px solid #dde6e9;
+            border-radius: 50px;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--secondary);
+            transform: translateY(-3px);
+        }
+
+        .filter-btn.active {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+            box-shadow: 0 6px 12px rgba(52, 152, 219, 0.25);
+        }
+
+        .filter-btn.active .indicator {
+            background: white;
+        }
+
+        .indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #bdc3c7;
+            display: inline-block;
+            transition: var(--transition);
+        }
+
+        .table-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--box-shadow);
+            overflow-x: auto;
+        }
+
+        .table-section h2 {
+            margin-bottom: 1.8rem;
+            color: var(--primary);
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .table-section h2::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100px;
+            height: 5px;
+            background: var(--secondary);
+            border-radius: 3px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+
+        th, td {
+            padding: 1.2rem 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: var(--primary);
+            font-weight: 700;
+            position: sticky;
+            top: 0;
+            font-size: 1.05rem;
+        }
+
+        tbody tr {
+            transition: var(--transition);
+        }
+
+        tbody tr:hover {
+            background-color: #f8fafc;
+            transform: scale(1.01);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-block;
+            min-width: 120px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .badge-primary {
+            background: #d6eaf8;
+            color: var(--secondary);
+        }
+
+        .badge-success {
+            background: #d5f5e3;
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: #fdebd0;
+            color: var(--warning);
+        }
+
+        .badge-danger {
+            background: #fadbd8;
+            color: var(--danger);
+        }
+
+        .badge-purple {
+            background: #e8daf5;
+            color: var(--purple);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.3rem;
+            color: #7f8c8d;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 2.5rem;
+            color: #7f8c8d;
+            font-style: italic;
+            font-size: 1.2rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2.5rem 0;
+            color: #7f8c8d;
+            font-size: 1rem;
+            margin-top: 3rem;
+        }
+
+        footer p {
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .stat-card .value {
+                font-size: 2.3rem;
+            }
+            
+            .stat-card .icon {
+                font-size: 2.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 18px;
+            }
+            
+            .filters-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            
+            th, td {
+                padding: 1rem;
+                font-size: 0.95rem;
+            }
+            
+            .stat-card .value {
+                font-size: 2rem;
+            }
+            
+            .stat-card {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            header h1 {
+                font-size: 2rem;
+            }
+            
+            header p {
+                font-size: 1.1rem;
+            }
+            
+            .stat-card .value {
+                font-size: 1.8rem;
+            }
+            
+            .filter-btn {
+                padding: 0.9rem;
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-campground"></i> Campamento 2025</h1>
+            <p>Sistema de gestión de asistentes con análisis en tiempo real</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <section class="stats-grid" id="stats-container">
+            <div class="stat-card">
+                <div class="icon"><i class="fas fa-users"></i></div>
+                <h3>Total Asistentes</h3>
+                <div class="value" id="total-asistentes">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon"><i class="fas fa-user-friends"></i></div>
+                <h3>Adultos Mayores (≥60)</h3>
+                <div class="value" id="total-mayores">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon"><i class="fas fa-praying-hands"></i></div>
+                <h3>Pastores</h3>
+                <div class="value" id="total-pastores">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon"><i class="fas fa-wheelchair"></i></div>
+                <h3>Asientos Especiales</h3>
+                <div class="value" id="total-asientos">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon"><i class="fas fa-tshirt"></i></div>
+                <h3>Solicitaron Franela</h3>
+                <div class="value" id="total-franela">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon"><i class="fas fa-bus"></i></div>
+                <h3>Transporte Pagado</h3>
+                <div class="value" id="total-transporte-pagado">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon"><i class="fas fa-money-bill-wave"></i></div>
+                <h3>Falta Pagar Transporte</h3>
+                <div class="value" id="total-transporte-pendiente">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon"><i class="fas fa-shopping-bag"></i></div>
+                <h3>Franelas Pagadas</h3>
+                <div class="value" id="total-franela-pagada">0</div>
+            </div>
+        </section>
+
+        <section class="chart-container">
+            <h2><i class="fas fa-chart-pie"></i> Distribución por Iglesia</h2>
+            <canvas id="church-chart"></canvas>
+        </section>
+
+        <section class="filters-section">
+            <h2><i class="fas fa-filter"></i> Filtrar Asistentes</h2>
+            
+            <div class="filter-group">
+                <h3><i class="fas fa-church"></i> Iglesia</h3>
+                <div class="filters-grid" id="church-filters">
+                    <!-- Filtros de iglesia se generarán aquí -->
+                </div>
+            </div>
+            
+            <div class="filter-group">
+                <h3><i class="fas fa-bus"></i> Transporte</h3>
+                <div class="filters-grid" id="transporte-filters">
+                    <!-- Filtros de transporte se generarán aquí -->
+                </div>
+            </div>
+            
+            <div class="filter-group">
+                <h3><i class="fas fa-tshirt"></i> Franela</h3>
+                <div class="filters-grid" id="franela-filters">
+                    <!-- Filtros de franela se generarán aquí -->
+                </div>
+            </div>
+            
+            <div class="filter-group">
+                <h3><i class="fas fa-sliders-h"></i> Otros Filtros</h3>
+                <div class="filters-grid" id="other-filters">
+                    <!-- Otros filtros se generarán aquí -->
+                </div>
+            </div>
+        </section>
+
+        <section class="table-section">
+            <h2><i class="fas fa-list"></i> Lista de Asistentes</h2>
+            <div id="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Iglesia</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Edad</th>
+                            <th>Pastor(a)</th>
+                            <th>Talla</th>
+                            <th>Transporte</th>
+                            <th>Franela</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Los datos se cargarán aquí -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>Sistema de gestión para el Campamento 2025 | Los datos se actualizan automáticamente desde el archivo data.csv</p>
+            <p><i class="fas fa-sync-alt"></i> Actualizado por última vez: <span id="last-update">--:--:--</span></p>
+        </div>
+    </footer>
+
+    <script>
+        // Variables globales
+        let csvData = [];
+        let churchChart = null;
+        let activeFilters = {
+            iglesia: null,
+            transportePagado: false,
+            transporteIncompleto: false,
+            transportePendiente: false,
+            franelaPagada: false,
+            franelaIncompleta: false,
+            franelaPendiente: false,
+            pastores: false,
+            niños: false,
+            asientos: false
+        };
+
+        // Función para cargar y procesar el CSV
+        async function loadCSV() {
+            try {
+                // Actualizar marca de tiempo
+                document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+                
+                // En un entorno real, reemplazar con la ruta a tu data.csv
+                const response = await fetch('data.csv');
+                const csvText = await response.text();
+                
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        csvData = results.data;
+                        updateStatistics();
+                        updateChart();
+                        createFilters();
+                        renderTable();
+                    },
+                    error: function(error) {
+                        console.error('Error al procesar CSV:', error);
+                        document.getElementById('table-body').innerHTML = `
+                            <tr>
+                                <td colspan="9" class="loading">Error al cargar datos. Verifica la URL del CSV.</td>
+                            </tr>
+                        `;
+                    }
+                });
+            } catch (error) {
+                console.error('Error al cargar CSV:', error);
+                document.getElementById('table-body').innerHTML = `
+                    <tr>
+                        <td colspan="9" class="loading">Error al cargar datos. Verifica la conexión.</td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Calcular estadísticas
+        function updateStatistics() {
+            if (!csvData.length) return;
+            
+            // Contadores
+            let totalAsistentes = 0;
+            let totalMayores = 0;
+            let totalPastores = 0;
+            let totalAsientos = 0;
+            let totalFranelaSolicitada = 0;
+            let totalFranelaPagada = 0;
+            let totalFranelaIncompleta = 0;
+            let totalFranelaPendiente = 0;
+            let totalTransportePagado = 0;
+            let totalTransporteIncompleto = 0;
+            let totalTransportePendiente = 0;
+            
+            // Iglesias únicas para el gráfico
+            const iglesias = {};
+            
+            csvData.forEach(row => {
+                if (row.Nombre || row.Apellido) totalAsistentes++;
+                
+                // Adultos mayores (≥60)
+                if (row.Edad && !isNaN(row.Edad) && parseInt(row.Edad) >= 60) {
+                    totalMayores++;
+                }
+                
+                // Pastores
+                if (row['Pastor(a)'] && row['Pastor(a)'].toUpperCase() === 'SI') {
+                    totalPastores++;
+                }
+                
+                // Asientos especiales
+                if (row.Asiento && row.Asiento.toUpperCase() === 'SI') {
+                    totalAsientos++;
+                }
+                
+                // Solicitaron franela (tienen talla)
+                const tieneTalla = row.Talla && row.Talla.trim() !== '' && row.Talla.trim() !== '-';
+                if (tieneTalla) {
+                    totalFranelaSolicitada++;
+                }
+                
+                // Estado de franela
+                const franela = row.Franela ? row.Franela.trim() : '';
+                if (franela === "5$") {
+                    totalFranelaPagada++;
+                } else if (franela === "2.5$" || franela === "3$") {
+                    totalFranelaIncompleta++;
+                } else if (tieneTalla && !franela.includes("$")) {
+                    totalFranelaPendiente++;
+                }
+                
+                // Transporte
+                const transporte = row.Transporte ? row.Transporte.trim() : '';
+                if (transporte === "2$") {
+                    totalTransportePagado++;
+                } else if (transporte === "1$") {
+                    totalTransporteIncompleto++;
+                } else if (transporte !== "") {
+                    totalTransportePendiente++;
+                } else {
+                    totalTransportePendiente++;
+                }
+                
+                // Contar iglesias para el gráfico
+                if (row.Iglesia) {
+                    iglesias[row.Iglesia] = (iglesias[row.Iglesia] || 0) + 1;
+                }
+            });
+            
+            // Actualizar UI
+            document.getElementById('total-asistentes').textContent = totalAsistentes;
+            document.getElementById('total-mayores').textContent = totalMayores;
+            document.getElementById('total-pastores').textContent = totalPastores;
+            document.getElementById('total-asientos').textContent = totalAsientos;
+            document.getElementById('total-franela').textContent = totalFranelaSolicitada;
+            document.getElementById('total-transporte-pagado').textContent = totalTransportePagado;
+            document.getElementById('total-transporte-pendiente').textContent = totalTransporteIncompleto + totalTransportePendiente;
+            document.getElementById('total-franela-pagada').textContent = totalFranelaPagada;
+        }
+
+        // Crear gráfico de distribución por iglesia
+        function updateChart() {
+            if (!csvData.length) return;
+            
+            const iglesias = {};
+            csvData.forEach(row => {
+                if (row.Iglesia) {
+                    iglesias[row.Iglesia] = (iglesias[row.Iglesia] || 0) + 1;
+                }
+            });
+            
+            const ctx = document.getElementById('church-chart').getContext('2d');
+            const labels = Object.keys(iglesias);
+            const data = Object.values(iglesias);
+            
+            // Destruir gráfico anterior si existe
+            if (churchChart) {
+                churchChart.destroy();
+            }
+            
+            // Crear nuevo gráfico
+            churchChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            '#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6',
+                            '#1abc9c', '#d35400', '#c0392b', '#16a085', '#8e44ad',
+                            '#27ae60', '#2980b9', '#f1c40f', '#e67e22', '#34495e'
+                        ],
+                        borderWidth: 1,
+                        hoverOffset: 20
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: {
+                                    size: 13
+                                },
+                                padding: 20,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%',
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true
+                    }
+                }
+            });
+        }
+
+        // Crear filtros
+        function createFilters() {
+            if (!csvData.length) return;
+            
+            const churchFiltersContainer = document.getElementById('church-filters');
+            const transporteFiltersContainer = document.getElementById('transporte-filters');
+            const franelaFiltersContainer = document.getElementById('franela-filters');
+            const otherFiltersContainer = document.getElementById('other-filters');
+            
+            churchFiltersContainer.innerHTML = '';
+            transporteFiltersContainer.innerHTML = '';
+            franelaFiltersContainer.innerHTML = '';
+            otherFiltersContainer.innerHTML = '';
+            
+            // Filtro por iglesia (recopilar iglesias únicas)
+            const uniqueChurches = [...new Set(csvData.map(row => row.Iglesia).filter(Boolean))];
+            
+            // Botón para cada iglesia
+            uniqueChurches.forEach(church => {
+                const button = document.createElement('button');
+                button.className = 'filter-btn';
+                button.innerHTML = `<span class="indicator"></span> ${church}`;
+                button.dataset.filter = 'iglesia';
+                button.dataset.value = church;
+                button.addEventListener('click', () => toggleFilter('iglesia', church));
+                churchFiltersContainer.appendChild(button);
+            });
+            
+            // Filtros de transporte
+            const transporteFilters = [
+                { id: 'transportePagado', label: 'Pagado', icon: 'fas fa-check-circle' },
+                { id: 'transporteIncompleto', label: 'Incompleto', icon: 'fas fa-exclamation-circle' },
+                { id: 'transportePendiente', label: 'Pendiente', icon: 'fas fa-times-circle' }
+            ];
+            
+            transporteFilters.forEach(filter => {
+                const button = document.createElement('button');
+                button.className = 'filter-btn';
+                button.innerHTML = `<i class="${filter.icon}"></i> <span class="indicator"></span> ${filter.label}`;
+                button.dataset.filter = filter.id;
+                button.addEventListener('click', () => toggleFilter(filter.id));
+                transporteFiltersContainer.appendChild(button);
+            });
+            
+            // Filtros de franela
+            const franelaFilters = [
+                { id: 'franelaPagada', label: 'Pagada (5$)', icon: 'fas fa-check-circle' },
+                { id: 'franelaIncompleta', label: 'Incompleta', icon: 'fas fa-exclamation-circle' },
+                { id: 'franelaPendiente', label: 'Pendiente', icon: 'fas fa-times-circle' }
+            ];
+            
+            franelaFilters.forEach(filter => {
+                const button = document.createElement('button');
+                button.className = 'filter-btn';
+                button.innerHTML = `<i class="${filter.icon}"></i> <span class="indicator"></span> ${filter.label}`;
+                button.dataset.filter = filter.id;
+                button.addEventListener('click', () => toggleFilter(filter.id));
+                franelaFiltersContainer.appendChild(button);
+            });
+            
+            // Otros filtros
+            const otherFilters = [
+                { id: 'pastores', label: 'Pastores', icon: 'fas fa-pray' },
+                { id: 'niños', label: 'Niños (<12)', icon: 'fas fa-child' },
+                { id: 'asientos', label: 'Asientos Prioritarios', icon: 'fas fa-wheelchair' }
+            ];
+            
+            otherFilters.forEach(filter => {
+                const button = document.createElement('button');
+                button.className = 'filter-btn';
+                button.innerHTML = `<i class="${filter.icon}"></i> <span class="indicator"></span> ${filter.label}`;
+                button.dataset.filter = filter.id;
+                button.addEventListener('click', () => toggleFilter(filter.id));
+                otherFiltersContainer.appendChild(button);
+            });
+            
+            // Actualizar estado visual de los botones
+            updateFilterButtons();
+        }
+
+        // Alternar filtros
+        function toggleFilter(filterType, value = null) {
+            if (filterType === 'iglesia') {
+                // Si ya está seleccionada, deseleccionar
+                if (activeFilters.iglesia === value) {
+                    activeFilters.iglesia = null;
+                } else {
+                    activeFilters.iglesia = value;
+                }
+            } else {
+                // Alternar filtro booleano
+                activeFilters[filterType] = !activeFilters[filterType];
+            }
+            
+            // Actualizar estado visual de los botones
+            updateFilterButtons();
+            
+            // Volver a renderizar la tabla con los filtros aplicados
+            renderTable();
+        }
+
+        // Actualizar estado visual de los botones de filtro
+        function updateFilterButtons() {
+            const buttons = document.querySelectorAll('.filter-btn');
+            
+            buttons.forEach(button => {
+                const filterType = button.dataset.filter;
+                const filterValue = button.dataset.value;
+                
+                button.classList.remove('active');
+                
+                if (filterType === 'iglesia') {
+                    if (activeFilters.iglesia === filterValue) {
+                        button.classList.add('active');
+                    }
+                } else {
+                    if (activeFilters[filterType]) {
+                        button.classList.add('active');
+                    }
+                }
+            });
+        }
+
+        // Renderizar tabla con filtros aplicados
+        function renderTable() {
+            if (!csvData.length) return;
+            
+            const tableBody = document.getElementById('table-body');
+            let filteredData = [...csvData];
+            
+            // Aplicar filtros
+            if (activeFilters.iglesia) {
+                filteredData = filteredData.filter(row => row.Iglesia === activeFilters.iglesia);
+            }
+            
+            // Filtros de transporte
+            if (activeFilters.transportePagado) {
+                filteredData = filteredData.filter(row => {
+                    const transporte = row.Transporte ? row.Transporte.trim() : '';
+                    return transporte === "2$";
+                });
+            }
+            
+            if (activeFilters.transporteIncompleto) {
+                filteredData = filteredData.filter(row => {
+                    const transporte = row.Transporte ? row.Transporte.trim() : '';
+                    return transporte === "1$";
+                });
+            }
+            
+            if (activeFilters.transportePendiente) {
+                filteredData = filteredData.filter(row => {
+                    const transporte = row.Transporte ? row.Transporte.trim() : '';
+                    return transporte !== "2$" && transporte !== "1$";
+                });
+            }
+            
+            // Filtros de franela
+            if (activeFilters.franelaPagada) {
+                filteredData = filteredData.filter(row => {
+                    const franela = row.Franela ? row.Franela.trim() : '';
+                    return franela === "5$";
+                });
+            }
+            
+            if (activeFilters.franelaIncompleta) {
+                filteredData = filteredData.filter(row => {
+                    const franela = row.Franela ? row.Franela.trim() : '';
+                    return franela === "2.5$" || franela === "3$";
+                });
+            }
+            
+            if (activeFilters.franelaPendiente) {
+                filteredData = filteredData.filter(row => {
+                    const franela = row.Franela ? row.Franela.trim() : '';
+                    const tieneTalla = row.Talla && row.Talla.trim() !== '' && row.Talla.trim() !== '-';
+                    return tieneTalla && !franela.includes("$");
+                });
+            }
+            
+            // Otros filtros
+            if (activeFilters.pastores) {
+                filteredData = filteredData.filter(row => 
+                    row['Pastor(a)'] && row['Pastor(a)'].toUpperCase() === 'SI'
+                );
+            }
+            
+            if (activeFilters.niños) {
+                filteredData = filteredData.filter(row => 
+                    row.Edad && !isNaN(row.Edad) && parseInt(row.Edad) < 12
+                );
+            }
+            
+            if (activeFilters.asientos) {
+                filteredData = filteredData.filter(row => 
+                    row.Asiento && row.Asiento.toUpperCase() === 'SI'
+                );
+            }
+            
+            // Ordenar alfabéticamente por apellido y luego por nombre
+            filteredData.sort((a, b) => {
+                // Primero por apellido
+                const apellidoA = (a.Apellido || '').toLowerCase();
+                const apellidoB = (b.Apellido || '').toLowerCase();
+                
+                if (apellidoA < apellidoB) return -1;
+                if (apellidoA > apellidoB) return 1;
+                
+                // Si los apellidos son iguales, ordenar por nombre
+                const nombreA = (a.Nombre || '').toLowerCase();
+                const nombreB = (b.Nombre || '').toLowerCase();
+                
+                if (nombreA < nombreB) return -1;
+                if (nombreA > nombreB) return 1;
+                
+                return 0;
+            });
+            
+            // Generar filas de la tabla
+            tableBody.innerHTML = '';
+            
+            if (filteredData.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="no-results">No se encontraron asistentes con los filtros seleccionados</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Generar números secuenciales para la columna #
+            filteredData.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                
+                // Determinar clases para badges
+                const pastorClass = row['Pastor(a)'] && row['Pastor(a)'].toUpperCase() === 'SI' ? 'badge badge-primary' : '';
+                const tieneTalla = row.Talla && row.Talla.trim() !== '' && row.Talla.trim() !== '-';
+                
+                // Determinar estado del transporte
+                let transporteBadge = '';
+                const transporte = row.Transporte ? row.Transporte.trim() : '';
+                if (transporte === "2$") {
+                    transporteBadge = `<span class="badge badge-success">Pagado</span>`;
+                } else if (transporte === "1$") {
+                    transporteBadge = `<span class="badge badge-warning">Incompleto</span>`;
+                } else if (transporte) {
+                    transporteBadge = `<span class="badge badge-danger">Pendiente: ${transporte}</span>`;
+                } else {
+                    transporteBadge = `<span class="badge badge-danger">Pendiente</span>`;
+                }
+                
+                // Determinar estado de la franela
+                let franelaBadge = '';
+                const franela = row.Franela ? row.Franela.trim() : '';
+                if (tieneTalla) {
+                    if (franela === "5$") {
+                        franelaBadge = `<span class="badge badge-success">Pagada</span>`;
+                    } else if (franela === "2.5$" || franela === "3$") {
+                        franelaBadge = `<span class="badge badge-warning">Incompleta</span>`;
+                    } else if (franela) {
+                        franelaBadge = `<span class="badge badge-danger">Pendiente: ${franela}</span>`;
+                    } else {
+                        franelaBadge = `<span class="badge badge-danger">Pendiente</span>`;
+                    }
+                } else {
+                    franelaBadge = `<span class="badge badge-purple">No solicitada</span>`;
+                }
+                
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><strong>${row.Iglesia || ''}</strong></td>
+                    <td>${row.Nombre || ''}</td>
+                    <td>${row.Apellido || ''}</td>
+                    <td>${row.Edad || ''}</td>
+                    <td><span class="${pastorClass}">${row['Pastor(a)'] || ''}</span></td>
+                    <td>${row.Talla || ''}</td>
+                    <td>${transporteBadge}</td>
+                    <td>${franelaBadge}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Cargar los datos cuando la página esté lista
+        document.addEventListener('DOMContentLoaded', loadCSV);
+        
+        // Recargar datos cada 5 minutos para mantener actualizado
+        setInterval(loadCSV, 300000);
+    </script>
+</body>
+</html>
