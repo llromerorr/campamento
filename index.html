@@ -1,1092 +1,1381 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campamento 2025 - Gestión de Asistentes</title>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #2c3e50;
-            --secondary: #3498db;
-            --accent: #e74c3c;
-            --light: #ecf0f1;
-            --dark: #2c3e50;
-            --success: #27ae60;
-            --warning: #f39c12;
-            --danger: #c0392b;
-            --info: #2980b9;
-            --purple: #9b59b6;
-            --border-radius: 12px;
-            --box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-            --transition: all 0.3s ease;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="color-scheme" content="light dark" />
+  <title>Campamento 2025</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <style>
+    :root{
+      --primary:#2563eb;
+      --bg:#f5f7fb;
+      --surface:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --border:#e5e7eb;
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9f2f6 100%);
-            color: var(--dark);
-            line-height: 1.7;
-            min-height: 100vh;
-            padding-bottom: 40px;
-        }
+      --success:#16a34a; --warning:#f59e0b; --danger:#ef4444; --info:#0ea5e9;
 
-        .container {
-            max-width: 1300px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+      --radius:16px;
+      --shadow:0 8px 20px rgba(2,6,23,.06);
+      --nav-h:72px; --header-h:64px;
 
-        header {
-            background: linear-gradient(135deg, var(--primary), #1a2530);
-            color: white;
-            padding: 2.5rem 0;
-            text-align: center;
-            border-radius: 0 0 var(--border-radius) var(--border-radius);
-            box-shadow: var(--box-shadow);
-            margin-bottom: 2.5rem;
-            position: relative;
-            overflow: hidden;
-        }
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    
+    /* Tema oscuro mejorado con mejor contraste */
+    @media (prefers-color-scheme: dark){
+      :root{
+        --primary:#60a5fa;
+        --bg:#1a1f2e;
+        --surface:#242937;
+        --text:#f3f4f6;
+        --muted:#9ca3af;
+        --border:#374151;
 
-        header::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 Q50,15 100,0 L100,100 Q50,85 0,100 Z" fill="rgba(255,255,255,0.15)"/></svg>');
-            background-size: 100% 100%;
-            opacity: 0.3;
-        }
+        --shadow: 0 8px 20px rgba(0,0,0,.3);
+      }
+    }
+    
+    @media (prefers-reduced-motion: reduce){
+      * { animation: none !important; transition: none !important; }
+    }
 
-        header h1 {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
-            position: relative;
-            text-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
+    *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+    html, body { height:100% }
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, sans-serif;
+      background:var(--bg); color:var(--text);
+      min-height:100vh;
+    }
 
-        header p {
-            font-size: 1.3rem;
-            opacity: 0.9;
-            max-width: 700px;
-            margin: 0 auto;
-            position: relative;
-            font-weight: 300;
-        }
+    /* Header */
+    .header{
+      position:fixed; inset:0 0 auto 0;
+      height: calc(var(--header-h) + var(--safe-top));
+      padding: max(12px, var(--safe-top)) 12px 8px 12px;
+      z-index:100;
+      display:flex; align-items:flex-end; justify-content:space-between; gap:8px;
+      color:var(--text); background:var(--surface);
+      border-bottom:1px solid var(--border);
+      box-shadow:0 2px 8px rgba(2,6,23,.06);
+    }
+    .header-left{
+      display:flex; align-items:center; gap:10px;
+    }
+    .header h1{
+      font-size:18px; font-weight:800; display:flex; gap:8px; align-items:center; margin:0;
+    }
+    @media (max-width: 500px){
+      .header h1{ font-size:16px; }
+    }
+    .header-right{
+      display:flex; align-items:center; gap:6px;
+    }
+    .icon-btn{
+      display:inline-grid; place-items:center; width:36px; height:36px;
+      border-radius:12px; border:1px solid var(--border); background:var(--surface);
+      color:var(--text); box-shadow:var(--shadow); cursor:pointer;
+    }
+    .icon-btn:active{ transform:scale(.98) }
+    .status-dot{
+      width:8px; height:8px; border-radius:999px;
+      background:#22c55e; border:1px solid rgba(0,0,0,.15);
+    }
+    .status-offline{ background:#f43f5e }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-            gap: 25px;
-            margin-bottom: 2.5rem;
-        }
+    .updated-badge{
+      background:rgba(37,99,235,.10); color:#1e3a8a; padding:6px 10px; border-radius:999px;
+      font-size:12px; display:none; align-items:center; gap:6px; border:1px solid rgba(37,99,235,.18);
+    }
+    @media (prefers-color-scheme: dark){
+      .updated-badge{ background:rgba(96,165,250,.15); color:#60a5fa; border:1px solid rgba(96,165,250,.25); }
+    }
+    .updated-badge.show{display:flex; animation:fade .25s ease}
+    @keyframes fade{from{opacity:.6; transform:translateY(-4px)} to{opacity:1; transform:translateY(0)}}
 
-        .stat-card {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 2rem 1.8rem;
-            box-shadow: var(--box-shadow);
-            transition: var(--transition);
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-            border-top: 5px solid var(--secondary);
-        }
+    .last-sync{
+      font-size:11px; color:var(--muted); display:none;
+    }
+    @media (min-width: 600px){
+      .last-sync{ display:block; }
+    }
 
-        .stat-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.15);
-        }
+    /* Search bar con ajuste para no tapar contenido */
+    .searchbar{
+      position:fixed; top: calc(var(--header-h) + var(--safe-top));
+      left:0; right:0; z-index:90; background:var(--surface);
+      border-bottom:1px solid var(--border); padding:8px 12px; display:none;
+    }
+    .searchbar.show{ display:block; animation:appear .2s ease }
+    .searchbox{
+      display:flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--border);
+      border-radius:12px; background:var(--bg);
+    }
+    .searchbox input{
+      flex:1; background:transparent; border:0; outline:0; color:var(--text); font-size:14px;
+    }
+    .mic-btn{ color:var(--muted); }
+    .clear-btn{ color:var(--muted); }
 
-        .stat-card::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: linear-gradient(90deg, var(--secondary), var(--primary));
-        }
+    /* Content con padding para no ser tapado */
+    .content{
+      padding:16px;
+      padding-top: calc(var(--header-h) + var(--safe-top) + 16px);
+      padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 16px);
+      max-width:900px; margin-inline:auto;
+      transition: padding-top .2s ease;
+    }
+    .content.search-active{
+      padding-top: calc(var(--header-h) + var(--safe-top) + 64px);
+    }
+    @media (max-width: 500px){
+      .content{ padding:12px; padding-top: calc(var(--header-h) + var(--safe-top) + 12px); padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px); }
+      .content.search-active{ padding-top: calc(var(--header-h) + var(--safe-top) + 60px); }
+    }
+    
+    .section{display:none; animation:appear .2s ease}
+    .section.active{display:block}
+    @keyframes appear{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)}}
 
-        .stat-card h3 {
-            font-size: 1.1rem;
-            color: #7f8c8d;
-            margin-bottom: 0.8rem;
-        }
+    .card{
+      background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:16px; margin-bottom:16px; border:1px solid var(--border);
+    }
+    @media (max-width: 500px){
+      .card{ padding:12px; margin-bottom:12px; }
+    }
 
-        .stat-card .value {
-            font-size: 2.8rem;
-            font-weight: 800;
-            color: var(--primary);
-            margin: 15px 0;
-            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
-        }
+    .hero{
+      background:linear-gradient(135deg,#1e3a8a,#2563eb); color:#fff; box-shadow:var(--shadow);
+      border:0;
+    }
+    .hero h2{margin:0 0 6px 0; font-size:18px}
+    @media (max-width: 500px){
+      .hero h2{ font-size:16px; }
+    }
+    .hero .row{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
+    .pill{
+      background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.28);
+      color:#fff; border-radius:999px; padding:6px 10px; font-size:13px; display:inline-flex; gap:6px; align-items:center;
+    }
+    @media (max-width: 500px){
+      .pill{ font-size:12px; padding:5px 8px; }
+    }
+    .countdown { font-size:12px; opacity:.9; }
+    /* Cuenta regresiva hero grande */
+    .countdown { margin-top: 8px; }
+    .timer {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(68px, 1fr));
+      gap: 8px;
+    }
+    .timebox {
+      background: rgba(255,255,255,.16);
+      border: 1px solid rgba(255,255,255,.28);
+      border-radius: 14px;
+      padding: 10px 8px;
+      text-align: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+    }
+    .timeval {
+      font-size: 34px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      letter-spacing: .5px;
+      animation: pop .25s ease;
+    }
+    .timelabel {
+      font-size: 12px;
+      opacity: .95;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-top: 4px;
+    }
+    @keyframes pop { 0%{transform:scale(1)} 35%{transform:scale(1.06)} 100%{transform:scale(1)} }
+    @media (max-width: 500px){
+      .timeval{ font-size: 28px; }
+    }
 
-        .stat-card .icon {
-            font-size: 2.8rem;
-            margin-bottom: 20px;
-            color: var(--secondary);
-            opacity: 0.9;
-        }
+    .title{
+      font-size:16px; font-weight:800; color:#1f2937; margin:16px 0 10px 0;
+      display:flex; align-items:center; gap:8px
+    }
+    @media (prefers-color-scheme: dark){
+      .title{ color:#f3f4f6 }
+    }
+    @media (max-width: 500px){
+      .title{ font-size:15px; margin:12px 0 8px 0; }
+    }
 
-        .chart-container {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 2rem;
-            box-shadow: var(--box-shadow);
-            margin-bottom: 2.5rem;
-        }
+    /* Grids optimizados para móviles */
+    .grid-2{
+      display:grid; gap:12px;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .grid-3{
+      display:grid; gap:12px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .grid-4{
+      display:grid; gap:12px;
+      grid-template-columns: repeat(4, 1fr);
+    }
+    @media (max-width: 768px){
+      .grid-3{ grid-template-columns: repeat(2, 1fr); }
+      .grid-4{ grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 400px){
+      .grid-2, .grid-3, .grid-4{ gap:10px; }
+    }
+    
+    .mini{
+      background:var(--surface); border-radius:14px; padding:14px; text-align:center; box-shadow:var(--shadow);
+      border:1px solid var(--border);
+      min-height:98px; display:grid; justify-items:center; align-content:center; gap:4px;
+    }
+    @media (max-width: 500px){
+      .mini{ padding:10px; min-height:86px; }
+    }
+    .mini .icon{font-size:20px}
+    .mini .label{font-size:12px; color:var(--muted); max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+    .mini .value{font-size:20px; font-weight:800; color:var(--text)}
+    @media (max-width: 500px){
+      .mini .icon{font-size:18px}
+      .mini .label{font-size:11px}
+      .mini .value{font-size:18px}
+    }
 
-        .chart-container h2 {
-            text-align: center;
-            margin-bottom: 2rem;
-            color: var(--primary);
-            position: relative;
-            padding-bottom: 15px;
-        }
+    .chips{display:flex; gap:8px; flex-wrap:wrap}
+    .chip{
+      background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:8px 12px; font-weight:600;
+      box-shadow:var(--shadow); cursor:pointer; user-select:none; font-size:13px; color:var(--text);
+    }
+    .chip.active{background:var(--primary); color:#fff; border-color:transparent}
+    .chips.tiny .chip{ padding:6px 10px; font-size:12px; }
+    @media (max-width: 500px){
+      .chip{ padding:6px 10px; font-size:12px; }
+    }
 
-        .chart-container h2::after {
-            content: "";
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 5px;
-            background: var(--secondary);
-            border-radius: 3px;
-        }
+    .list{display:flex; flex-direction:column; gap:10px}
+    @media (max-width: 500px){
+      .list{ gap:8px; }
+    }
+    .item{
+      background:var(--surface); border-radius:14px; padding:12px; box-shadow:var(--shadow);
+      display:flex; justify-content:space-between; align-items:flex-start; gap:10px; border:1px solid var(--border);
+    }
+    @media (max-width: 500px){
+      .item{ padding:10px; }
+    }
+    .item .name{font-weight:800; font-size:14px; color:var(--text)}
+    .item .meta{font-size:12px; color:var(--muted)}
+    .badges{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px}
+    @media (max-width: 500px){
+      .badges{ gap:4px; margin-top:6px; }
+    }
+    .badge{font-size:11px; padding:4px 8px; border-radius:999px; color:#fff}
+    @media (max-width: 500px){
+      .badge{ font-size:10px; padding:3px 6px; }
+    }
+    .b-success{background:var(--success)} .b-warn{background:var(--warning); color:#2d3436}
+    .b-danger{background:var(--danger)} .b-info{background:var(--info)} .b-primary{background:var(--primary)}
 
-        .filters-section {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 2rem;
-            box-shadow: var(--box-shadow);
-            margin-bottom: 2.5rem;
-        }
+    .tabs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px}
+    .tab{
+      background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:8px 12px; font-weight:700; cursor:pointer; font-size:13px; color:var(--text)
+    }
+    .tab.active{background:var(--primary); color:#fff; border-color:transparent}
+    @media (max-width: 500px){
+      .tab{ padding:6px 10px; font-size:12px; }
+    }
 
-        .filters-section h2 {
-            margin-bottom: 1.8rem;
-            color: var(--primary);
-            position: relative;
-            padding-bottom: 15px;
-        }
+    .money{
+      display:grid; gap:12px;
+      grid-template-columns: repeat(2, 1fr);
+      margin-top:16px; /* separación uniforme del bloque anterior */
+    }
+    @media (max-width: 400px){
+      .money{ gap:10px; }
+    }
+    .money .box{background:var(--surface); border-radius:14px; padding:12px; box-shadow:var(--shadow); border:1px solid var(--border)}
+    @media (max-width: 500px){
+      .money .box{ padding:10px; }
+    }
+    .money .box h4{margin:0 0 4px 0; font-size:12px; color:var(--muted)}
+    .money .box .num{font-size:18px; font-weight:800; color:var(--text)}
+    @media (max-width: 500px){
+      .money .box .num{ font-size:16px; }
+    }
 
-        .filters-section h2::after {
-            content: "";
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100px;
-            height: 5px;
-            background: var(--secondary);
-            border-radius: 3px;
-        }
+    /* Progress bar mejorada */
+    .progress-wrap{
+      margin-top:16px;      /* separación respecto a money */
+      margin-bottom:16px;   /* respiro hacia el siguiente bloque */
+    }
+    .progress-info{
+      display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;
+    }
+    .progress-label{font-size:12px; color:var(--muted)}
+    .progress-percent{font-size:14px; font-weight:700; color:var(--text)}
+    .progress{
+      height:20px; background:rgba(2,6,23,.08); border-radius:999px; overflow:hidden; border:1px solid var(--border);
+      position:relative;
+    }
+    @media (prefers-color-scheme: dark){
+      .progress{ background:rgba(255,255,255,.08); }
+    }
+    .progress > i{
+      display:block; height:100%; width:0%; background:linear-gradient(90deg, #22c55e, #16a34a);
+      border-radius:999px; transition: width .4s ease;
+    }
 
-        .filter-group {
-            margin-bottom: 2.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px dashed #e0e6e9;
-        }
+    .chart-wrap{height:280px}
+    @media (max-width: 500px){
+      .chart-wrap{ height:240px; }
+    }
 
-        .filter-group:last-child {
-            margin-bottom: 0;
-            padding-bottom: 0;
-            border-bottom: none;
-        }
+    /* Barras pequeñas para ranking */
+    .progress-sm{
+      height: 8px;
+      background: rgba(2,6,23,.08);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    @media (prefers-color-scheme: dark){
+      .progress-sm{ background: rgba(255,255,255,.08); }
+    }
+    .progress-sm > i{
+      display:block; height:100%; width:0%;
+      background: linear-gradient(90deg, var(--primary), #22c55e);
+      transition: width .4s ease;
+    }
+    .medal{ font-size:18px; margin-right:6px }
 
-        .filter-group h3 {
-            margin-bottom: 1.5rem;
-            font-size: 1.3rem;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+    /* Bottom nav */
+    .bottom{
+      position:fixed; left:0; right:0; bottom:0; height: calc(var(--nav-h) + var(--safe-bottom)); z-index:60;
+      padding-bottom: var(--safe-bottom);
+      background:var(--surface); box-shadow:0 -6px 18px rgba(2,6,23,.08); display:flex; border-top:1px solid var(--border);
+    }
+    .nav{
+      flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:#94a3b8; font-size:12px; cursor:pointer; position:relative;
+      min-height:52px;
+    }
+    @media (max-width: 400px){
+      .nav{ font-size:11px; }
+    }
+    .nav i{font-size:20px}
+    .nav.active{color:var(--primary)}
+    .nav.active::before{content:""; position:absolute; top:0; left:12%; right:12%; height:3px; background:var(--primary); border-radius:999px}
 
-        .filter-group h3 i {
-            color: var(--secondary);
-            background: rgba(52, 152, 219, 0.15);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    /* Toast */
+    .toast{
+      position:fixed; left:50%; bottom: calc(var(--nav-h) + var(--safe-bottom) + 16px);
+      transform:translateX(-50%); background:var(--surface); color:var(--text);
+      padding:10px 14px; border-radius:999px; border:1px solid var(--border); box-shadow:var(--shadow);
+      display:none; align-items:center; gap:8px; z-index:300;
+    }
+    .toast.show{ display:flex; animation:appear .2s ease }
 
-        .filters-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 18px;
-        }
+    /* Confetti mínimo */
+    .confetti{
+      position: fixed; top:-10px; width:8px; height:14px; border-radius:2px;
+      opacity:.95; z-index:1100; pointer-events:none;
+      animation: confetti-fall linear var(--dur,1200ms) var(--delay,0ms) forwards, confetti-rot ease-in-out var(--rot,700ms) infinite;
+    }
+    @keyframes confetti-fall { to{ transform: translateY(calc(100vh + 20px)) } }
+    @keyframes confetti-rot { 0%{ rotate:0deg } 50%{ rotate:120deg } 100%{ rotate:360deg } }
 
-        .filter-btn {
-            background: var(--light);
-            border: 2px solid #dde6e9;
-            border-radius: 50px;
-            padding: 1rem 1.5rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            text-align: center;
-            color: var(--dark);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-size: 1rem;
-        }
-
-        .filter-btn:hover {
-            border-color: var(--secondary);
-            transform: translateY(-3px);
-        }
-
-        .filter-btn.active {
-            background: var(--secondary);
-            color: white;
-            border-color: var(--secondary);
-            box-shadow: 0 6px 12px rgba(52, 152, 219, 0.25);
-        }
-
-        .filter-btn.active .indicator {
-            background: white;
-        }
-
-        .indicator {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #bdc3c7;
-            display: inline-block;
-            transition: var(--transition);
-        }
-
-        .table-section {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 2rem;
-            box-shadow: var(--box-shadow);
-            overflow-x: auto;
-        }
-
-        .table-section h2 {
-            margin-bottom: 1.8rem;
-            color: var(--primary);
-            position: relative;
-            padding-bottom: 15px;
-        }
-
-        .table-section h2::after {
-            content: "";
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100px;
-            height: 5px;
-            background: var(--secondary);
-            border-radius: 3px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 900px;
-        }
-
-        th, td {
-            padding: 1.2rem 1.5rem;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-
-        th {
-            background-color: #f8f9fa;
-            color: var(--primary);
-            font-weight: 700;
-            position: sticky;
-            top: 0;
-            font-size: 1.05rem;
-        }
-
-        tbody tr {
-            transition: var(--transition);
-        }
-
-        tbody tr:hover {
-            background-color: #f8fafc;
-            transform: scale(1.01);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        }
-
-        .badge {
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            display: inline-block;
-            min-width: 120px;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .badge-primary {
-            background: #d6eaf8;
-            color: var(--secondary);
-        }
-
-        .badge-success {
-            background: #d5f5e3;
-            color: var(--success);
-        }
-
-        .badge-warning {
-            background: #fdebd0;
-            color: var(--warning);
-        }
-
-        .badge-danger {
-            background: #fadbd8;
-            color: var(--danger);
-        }
-
-        .badge-purple {
-            background: #e8daf5;
-            color: var(--purple);
-        }
-
-        .loading {
-            text-align: center;
-            padding: 3rem;
-            font-size: 1.3rem;
-            color: #7f8c8d;
-        }
-
-        .no-results {
-            text-align: center;
-            padding: 2.5rem;
-            color: #7f8c8d;
-            font-style: italic;
-            font-size: 1.2rem;
-        }
-
-        footer {
-            text-align: center;
-            padding: 2.5rem 0;
-            color: #7f8c8d;
-            font-size: 1rem;
-            margin-top: 3rem;
-        }
-
-        footer p {
-            max-width: 700px;
-            margin: 0 auto;
-            line-height: 1.8;
-        }
-
-        /* Responsive */
-        @media (max-width: 992px) {
-            header h1 {
-                font-size: 2.5rem;
-            }
-            
-            .stat-card .value {
-                font-size: 2.3rem;
-            }
-            
-            .stat-card .icon {
-                font-size: 2.5rem;
-            }
-        }
-
-        @media (max-width: 768px) {
-            header h1 {
-                font-size: 2.2rem;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 18px;
-            }
-            
-            .filters-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 15px;
-            }
-            
-            th, td {
-                padding: 1rem;
-                font-size: 0.95rem;
-            }
-            
-            .stat-card .value {
-                font-size: 2rem;
-            }
-            
-            .stat-card {
-                padding: 1.5rem;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .filters-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            header h1 {
-                font-size: 2rem;
-            }
-            
-            header p {
-                font-size: 1.1rem;
-            }
-            
-            .stat-card .value {
-                font-size: 1.8rem;
-            }
-            
-            .filter-btn {
-                padding: 0.9rem;
-                font-size: 0.95rem;
-            }
-        }
-    </style>
+  </style>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <h1><i class="fas fa-campground"></i> Campamento 2025</h1>
-            <p>Sistema de gestión de asistentes con análisis en tiempo real</p>
-        </div>
-    </header>
-
-    <div class="container">
-        <section class="stats-grid" id="stats-container">
-            <div class="stat-card">
-                <div class="icon"><i class="fas fa-users"></i></div>
-                <h3>Total Asistentes</h3>
-                <div class="value" id="total-asistentes">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon"><i class="fas fa-user-friends"></i></div>
-                <h3>Adultos Mayores (≥60)</h3>
-                <div class="value" id="total-mayores">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon"><i class="fas fa-praying-hands"></i></div>
-                <h3>Pastores</h3>
-                <div class="value" id="total-pastores">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon"><i class="fas fa-wheelchair"></i></div>
-                <h3>Asientos Especiales</h3>
-                <div class="value" id="total-asientos">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon"><i class="fas fa-tshirt"></i></div>
-                <h3>Solicitaron Franela</h3>
-                <div class="value" id="total-franela">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon"><i class="fas fa-bus"></i></div>
-                <h3>Transporte Pagado</h3>
-                <div class="value" id="total-transporte-pagado">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon"><i class="fas fa-money-bill-wave"></i></div>
-                <h3>Falta Pagar Transporte</h3>
-                <div class="value" id="total-transporte-pendiente">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon"><i class="fas fa-shopping-bag"></i></div>
-                <h3>Franelas Pagadas</h3>
-                <div class="value" id="total-franela-pagada">0</div>
-            </div>
-        </section>
-
-        <section class="chart-container">
-            <h2><i class="fas fa-chart-pie"></i> Distribución por Iglesia</h2>
-            <canvas id="church-chart"></canvas>
-        </section>
-
-        <section class="filters-section">
-            <h2><i class="fas fa-filter"></i> Filtrar Asistentes</h2>
-            
-            <div class="filter-group">
-                <h3><i class="fas fa-church"></i> Iglesia</h3>
-                <div class="filters-grid" id="church-filters">
-                    <!-- Filtros de iglesia se generarán aquí -->
-                </div>
-            </div>
-            
-            <div class="filter-group">
-                <h3><i class="fas fa-bus"></i> Transporte</h3>
-                <div class="filters-grid" id="transporte-filters">
-                    <!-- Filtros de transporte se generarán aquí -->
-                </div>
-            </div>
-            
-            <div class="filter-group">
-                <h3><i class="fas fa-tshirt"></i> Franela</h3>
-                <div class="filters-grid" id="franela-filters">
-                    <!-- Filtros de franela se generarán aquí -->
-                </div>
-            </div>
-            
-            <div class="filter-group">
-                <h3><i class="fas fa-sliders-h"></i> Otros Filtros</h3>
-                <div class="filters-grid" id="other-filters">
-                    <!-- Otros filtros se generarán aquí -->
-                </div>
-            </div>
-        </section>
-
-        <section class="table-section">
-            <h2><i class="fas fa-list"></i> Lista de Asistentes</h2>
-            <div id="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Iglesia</th>
-                            <th>Nombre</th>
-                            <th>Apellido</th>
-                            <th>Edad</th>
-                            <th>Pastor(a)</th>
-                            <th>Talla</th>
-                            <th>Transporte</th>
-                            <th>Franela</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body">
-                        <!-- Los datos se cargarán aquí -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
+  <div class="header" role="banner">
+    <div class="header-left">
+      <div id="statusDot" class="status-dot" aria-label="Estado de conexión"></div>
+      <h1>🏕️ Campamento 2025</h1>
     </div>
+    <div class="header-right">
+      <div class="last-sync" id="lastSync">—</div>
+      <div id="updatedBadge" class="updated-badge" title="Actualizado"><i class="fa-solid fa-check"></i> Actualizado</div>
+      <div class="icon-btn" id="shareBtn" title="Compartir"><i class="fa-solid fa-share-nodes"></i></div>
+      <div class="icon-btn" id="refreshBtn" title="Actualizar"><i class="fa-solid fa-rotate-right"></i></div>
+      <div class="icon-btn" id="searchBtn" title="Buscar"><i class="fa-solid fa-magnifying-glass"></i></div>
+    </div>
+  </div>
 
-    <footer>
-        <div class="container">
-            <p>Sistema de gestión para el Campamento 2025 | Los datos se actualizan automáticamente desde el archivo data.csv</p>
-            <p><i class="fas fa-sync-alt"></i> Actualizado por última vez: <span id="last-update">--:--:--</span></p>
+  <!-- Searchbar -->
+  <div id="searchBar" class="searchbar" role="search">
+    <div class="searchbox">
+      <i class="fa-solid fa-magnifying-glass" style="color:var(--muted)"></i>
+      <input id="searchInput" type="search" placeholder="Buscar nombre, iglesia, talla..." inputmode="search" aria-label="Buscar" />
+      <div class="icon-btn mic-btn" id="micBtn" title="Dictar"><i class="fa-solid fa-microphone"></i></div>
+      <div class="icon-btn clear-btn" id="clearSearch" title="Limpiar"><i class="fa-solid fa-xmark"></i></div>
+    </div>
+  </div>
+
+  <div class="content" id="content">
+    <!-- RESUMEN -->
+    <section id="resumen-section" class="section active">
+      <div class="card hero">
+        <h2>Campamento • Domingo 7 de septiembre de 2025</h2>
+        <div class="countdown" id="countdown">Faltan — días</div>
+        <div class="row">
+          <span class="pill">🕖 Salida: 7:00 a.m.</span>
+          <span class="pill">🚌 Transporte: $2</span>
+          <span class="pill">👕 Franela opcional: $5</span>
+          <span class="pill">🙏 Presencia de Dios</span>
+          <span class="pill">💧 Bautizos: llevar ropa blanca</span>
         </div>
-    </footer>
+      </div>
 
-    <script>
-        // Variables globales
-        let csvData = [];
-        let churchChart = null;
-        let activeFilters = {
-            iglesia: null,
-            transportePagado: false,
-            transporteIncompleto: false,
-            transportePendiente: false,
-            franelaPagada: false,
-            franelaIncompleta: false,
-            franelaPendiente: false,
-            pastores: false,
-            niños: false,
-            asientos: false
-        };
+      <div class="title"><i class="fa-solid fa-gauge"></i> Resumen general</div>
+      <div class="grid-3">
+        <div class="mini"><div class="icon">👥</div><div class="label">Asistentes</div><div id="sum-total" class="value">0</div></div>
+        <div class="mini"><div class="icon">⛪</div><div class="label">Iglesias</div><div id="sum-iglesias" class="value">0</div></div>
+        <div class="mini"><div class="icon">👶</div><div class="label">Niños</div><div id="sum-ninos" class="value">0</div></div>
+        <div class="mini"><div class="icon">🙏</div><div class="label">Pastores</div><div id="sum-pastores" class="value">0</div></div>
+        <div class="mini"><div class="icon">👴</div><div class="label">Mayores</div><div id="sum-mayores" class="value">0</div></div>
+        <div class="mini"><div class="icon">👕</div><div class="label">Pidieron franelas</div><div id="sum-fran-solic" class="value">0</div></div>
+      </div>
 
-        // Función para cargar y procesar el CSV
-        async function loadCSV() {
-            try {
-                // Actualizar marca de tiempo
-                document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
-                
-                // En un entorno real, reemplazar con la ruta a tu data.csv
-                const response = await fetch('data.csv');
-                const csvText = await response.text();
-                
-                Papa.parse(csvText, {
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        csvData = results.data;
-                        updateStatistics();
-                        updateChart();
-                        createFilters();
-                        renderTable();
-                    },
-                    error: function(error) {
-                        console.error('Error al procesar CSV:', error);
-                        document.getElementById('table-body').innerHTML = `
-                            <tr>
-                                <td colspan="9" class="loading">Error al cargar datos. Verifica la URL del CSV.</td>
-                            </tr>
-                        `;
-                    }
-                });
-            } catch (error) {
-                console.error('Error al cargar CSV:', error);
-                document.getElementById('table-body').innerHTML = `
-                    <tr>
-                        <td colspan="9" class="loading">Error al cargar datos. Verifica la conexión.</td>
-                    </tr>
-                `;
-            }
+      <div class="title"><i class="fa-solid fa-bus"></i> Transporte</div>
+      <div class="grid-4">
+        <div class="mini"><div class="icon">✅</div><div class="label">Pagado</div><div id="sum-t-pagado" class="value">0</div></div>
+        <div class="mini"><div class="icon">⏳</div><div class="label">Parcial</div><div id="sum-t-parcial" class="value">0</div></div>
+        <div class="mini"><div class="icon">❌</div><div class="label">Pendiente</div><div id="sum-t-pend" class="value">0</div></div>
+        <div class="mini"><div class="icon">🎫</div><div class="label">Exonerado</div><div id="sum-t-exo" class="value">0</div></div>
+      </div>
+      <div class="money">
+        <div class="box"><h4>Recaudado</h4><div id="sum-t-rec" class="num">$0</div></div>
+        <div class="box"><h4>Pendiente</h4><div id="sum-t-deuda" class="num">$0</div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-info">
+          <div class="progress-label">Avance pagos transporte</div>
+          <div class="progress-percent" id="progressTransporteText">0%</div>
+        </div>
+        <div class="progress"><i id="progressTransporte" style="width:0%"></i></div>
+      </div>
+
+      <div class="title"><i class="fa-solid fa-shirt"></i> Franelas</div>
+      <div class="grid-4">
+        <div class="mini"><div class="icon">📝</div><div class="label">Solicitadas</div><div id="sum-f-solic" class="value">0</div></div>
+        <div class="mini"><div class="icon">✅</div><div class="label">Pagadas</div><div id="sum-f-pagadas" class="value">0</div></div>
+        <div class="mini"><div class="icon">⏳</div><div class="label">Parcial</div><div id="sum-f-parcial" class="value">0</div></div>
+        <div class="mini"><div class="icon">❌</div><div class="label">Pendiente</div><div id="sum-f-pend" class="value">0</div></div>
+      </div>
+      <div class="money">
+        <div class="box"><h4>Recaudado</h4><div id="sum-f-rec" class="num">$0</div></div>
+        <div class="box"><h4>Pendiente</h4><div id="sum-f-deuda" class="num">$0</div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-info">
+          <div class="progress-label">Avance pagos franelas</div>
+          <div class="progress-percent" id="progressFranelasText">0%</div>
+        </div>
+        <div class="progress"><i id="progressFranelas" style="width:0%"></i></div>
+      </div>
+
+      <div class="card">
+        <div class="title"><i class="fa-solid fa-chart-pie"></i> Iglesias</div>
+        <div class="chips tiny" id="iglesiasViewTabs" style="margin-bottom:8px">
+          <div class="chip active" data-v="grafico">Gráfico</div>
+          <div class="chip" data-v="ranking">Ranking</div>
+        </div>
+        <div class="chart-wrap" id="churchChartWrap">
+          <canvas id="churchChart" aria-label="Distribución por iglesia" role="img"></canvas>
+        </div>
+        <div id="rankingList" class="list" style="display:none"></div>
+      </div>
+    </section>
+
+    <!-- LISTADO -->
+    <section id="listado-section" class="section">
+      <div class="card">
+        <div class="title"><i class="fa-solid fa-church"></i> Filtrar por iglesia</div>
+        <div id="iglesiasChips" class="chips"></div>
+      </div>
+      <div class="card">
+        <div class="title"><i class="fa-solid fa-users"></i> Listado</div>
+        <div class="chips tiny" id="listadoSortChips" style="margin-bottom:8px">
+          <div class="chip active" data-sort="az">A-Z</div>
+          <div class="chip" data-sort="edad-asc">Edad ↑</div>
+          <div class="chip" data-sort="edad-desc">Edad ↓</div>
+        </div>
+        <div id="listadoCount" class="meta" style="margin-bottom:8px">0 personas</div>
+        <div id="listado" class="list"></div>
+      </div>
+    </section>
+
+    <!-- TRANSPORTE -->
+    <section id="transporte-section" class="section">
+      <div class="card">
+        <div class="title"><i class="fa-solid fa-bus"></i> Estado general</div>
+        <div class="grid-4">
+          <div class="mini"><div class="icon">✅</div><div class="label">Pagado</div><div id="t-pagado" class="value">0</div></div>
+          <div class="mini"><div class="icon">⏳</div><div class="label">Parcial</div><div id="t-parcial" class="value">0</div></div>
+          <div class="mini"><div class="icon">❌</div><div class="label">Pendiente</div><div id="t-pendiente" class="value">0</div></div>
+          <div class="mini"><div class="icon">🎫</div><div class="label">Exonerado</div><div id="t-exonerado" class="value">0</div></div>
+        </div>
+        <div class="money">
+          <div class="box"><h4>Recaudado</h4><div id="t-recaudado" class="num">$0</div></div>
+          <div class="box"><h4>Pendiente</h4><div id="t-deuda" class="num">$0</div></div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-info">
+            <div class="progress-label">Avance de pagos</div>
+            <div class="progress-percent" id="progressTransporte2Text">0%</div>
+          </div>
+          <div class="progress"><i id="progressTransporte2" style="width:0%"></i></div>
+        </div>
+        <div class="meta" style="margin-top:16px; font-size:12px">
+          Capacidad bus: <strong>45</strong> • Buses estimados (asientos): <strong id="busEstimados">0</strong>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="title"><i class="fa-solid fa-list-check"></i> Detalle</div>
+        <div class="tabs" id="tTabs">
+          <div class="tab active" data-t="todos">Todos</div>
+          <div class="tab" data-t="pagado">Pagado</div>
+          <div class="tab" data-t="parcial">Parcial</div>
+          <div class="tab" data-t="pendiente">Pendiente</div>
+          <div class="tab" data-t="exonerado">Exonerado</div>
+        </div>
+        <div class="chips tiny" id="transporteSortChips" style="margin-bottom:8px">
+          <div class="chip active" data-sort="az">A-Z</div>
+          <div class="chip" data-sort="edad-asc">Edad ↑</div>
+          <div class="chip" data-sort="edad-desc">Edad ↓</div>
+        </div>
+        <div id="listaTransporte" class="list"></div>
+      </div>
+    </section>
+
+    <!-- FRANELAS -->
+    <section id="franelas-section" class="section">
+      <div class="card">
+        <div class="title"><i class="fa-solid fa-shirt"></i> Estado general</div>
+        <div class="grid-4">
+          <div class="mini"><div class="icon">📝</div><div class="label">Solicitadas</div><div id="f-solicitadas" class="value">0</div></div>
+          <div class="mini"><div class="icon">✅</div><div class="label">Pagadas</div><div id="f-pagadas" class="value">0</div></div>
+          <div class="mini"><div class="icon">⏳</div><div class="label">Parcial</div><div id="f-parcial" class="value">0</div></div>
+          <div class="mini"><div class="icon">❌</div><div class="label">Pendiente</div><div id="f-pendientes" class="value">0</div></div>
+        </div>
+        <div class="money">
+          <div class="box"><h4>Recaudado</h4><div id="f-recaudado" class="num">$0</div></div>
+          <div class="box"><h4>Pendiente</h4><div id="f-deuda" class="num">$0</div></div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-info">
+            <div class="progress-label">Avance de pagos</div>
+            <div class="progress-percent" id="progressFranelas2Text">0%</div>
+          </div>
+          <div class="progress"><i id="progressFranelas2" style="width:0%"></i></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="title"><i class="fa-solid fa-ruler-combined"></i> Tallas</div>
+        <div id="tallasGrid" class="grid-4"></div>
+      </div>
+
+      <div class="card">
+        <div class="title"><i class="fa-solid fa-list-check"></i> Detalle</div>
+        <div class="tabs" id="fTabs">
+          <div class="tab active" data-f="todos">Todos</div>
+          <div class="tab" data-f="pagada">Pagada</div>
+          <div class="tab" data-f="parcial">Parcial</div>
+          <div class="tab" data-f="pendiente">Pendiente</div>
+        </div>
+        <div class="chips tiny" id="franelasSortChips" style="margin-bottom:8px">
+          <div class="chip active" data-sort="az">A-Z</div>
+          <div class="chip" data-sort="edad-asc">Edad ↑</div>
+          <div class="chip" data-sort="edad-desc">Edad ↓</div>
+        </div>
+        <div id="listaFranelas" class="list"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom" role="navigation" aria-label="Navegación inferior">
+    <div class="nav active" onclick="showSection(this,'resumen')"><i class="fa-solid fa-home"></i><span>Resumen</span></div>
+    <div class="nav" onclick="showSection(this,'listado')"><i class="fa-solid fa-users"></i><span>Listado</span></div>
+    <div class="nav" onclick="showSection(this,'transporte')"><i class="fa-solid fa-bus"></i><span>Transporte</span></div>
+    <div class="nav" onclick="showSection(this,'franelas')"><i class="fa-solid fa-shirt"></i><span>Franelas</span></div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"><i class="fa-solid fa-circle-check" style="color:#22c55e"></i><span id="toastMsg">Listo</span></div>
+
+  <script>
+    // Estado global
+    let csvData = [];
+    let churchChart = null;
+    let activeChurchListado = null;
+    let transportFilter = 'todos';
+    let franelaFilter = 'todos';
+    let searchQuery = '';
+    let activeSection = 'resumen';
+    let listadoSort = 'az', transporteSort = 'az', franelasSort = 'az';
+    
+    // Valores fijos (sin configuración)
+    const TRANSPORT_COST = 2;
+    const SHIRT_COST = 5;
+    const EXO_AGE = 13;
+    const CURRENCY = '$';
+    const BUS_CAPACITY = 45;
+    
+    const AUTO_REFRESH_MS = 180000; // 3 minutos
+    const CSV_URL = 'data.csv';
+    const LS_CSV_TEXT = 'camp2025_csv_text';
+    const LS_CSV_HASH = 'camp2025_csv_hash';
+    const LS_LAST_SYNC = 'camp2025_last_sync';
+    const LS_MILESTONES = 'camp2025_milestones';
+
+    // DOM Ready
+    document.addEventListener('DOMContentLoaded', () => {
+      bindUI();
+      updateCountdown();
+      setInterval(updateCountdown, 1000); // actualización cada segundo
+
+      const cachedText = localStorage.getItem(LS_CSV_TEXT);
+      if(cachedText){ parseCSV(cachedText, true); }
+
+      loadCSV(true);
+      setInterval(() => loadCSV(false), AUTO_REFRESH_MS);
+      setupTabs();
+      setupIglesiasToggle();
+      updateOnlineStatus();
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
+    });
+
+    function bindUI(){
+      document.getElementById('refreshBtn').addEventListener('click', ()=> { rotateOnce('refreshBtn'); loadCSV(false, true); });
+      document.getElementById('searchBtn').addEventListener('click', toggleSearch);
+      document.getElementById('clearSearch').addEventListener('click', ()=>{ setSearch(''); });
+      document.getElementById('searchInput').addEventListener('input', debounce((e)=> setSearch(e.target.value), 120));
+      document.getElementById('shareBtn').addEventListener('click', shareSummary);
+
+      // Sort chips
+      setupSortChips('listadoSortChips', (v)=>{ listadoSort=v; renderListado(); });
+      setupSortChips('transporteSortChips', (v)=>{ transporteSort=v; renderTransporte(); });
+      setupSortChips('franelasSortChips', (v)=>{ franelasSort=v; renderFranelas(); });
+
+      // Mic (si está disponible)
+      setupMic();
+    }
+
+    function setupSortChips(containerId, onChange){
+      const cont = document.getElementById(containerId);
+      cont.querySelectorAll('.chip').forEach(ch=>{
+        ch.addEventListener('click', ()=>{
+          cont.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+          ch.classList.add('active');
+          onChange(ch.dataset.sort);
+        });
+      });
+    }
+
+    function rotateOnce(btnId){
+      const btn = document.getElementById(btnId);
+      const i = btn.querySelector('i'); i.style.transition='transform .6s ease'; i.style.transform='rotate(360deg)';
+      setTimeout(()=>{ i.style.transform=''; }, 650);
+    }
+
+    function toggleSearch(){
+      const bar = document.getElementById('searchBar');
+      const content = document.getElementById('content');
+      bar.classList.toggle('show');
+      if(bar.classList.contains('show')) {
+        content.classList.add('search-active');
+        const input = document.getElementById('searchInput');
+        setTimeout(()=>input.focus(), 50);
+      } else {
+        content.classList.remove('search-active');
+      }
+    }
+    function setSearch(q){
+      searchQuery = (q||'').trim();
+      document.getElementById('searchInput').value = searchQuery;
+      renderBySection();
+    }
+
+    function updateOnlineStatus(){
+      const dot = document.getElementById('statusDot');
+      if(navigator.onLine){ dot.classList.remove('status-offline'); dot.title = 'En línea'; }
+      else { dot.classList.add('status-offline'); dot.title = 'Sin conexión'; }
+    }
+
+    function showSection(el, id){
+      document.querySelectorAll('.nav').forEach(n => n.classList.remove('active'));
+      el.classList.add('active');
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id+'-section').classList.add('active');
+      activeSection = id;
+      renderBySection();
+    }
+    function renderBySection(){
+      if(activeSection==='listado'){ renderListado(); }
+      if(activeSection==='transporte'){ renderTransporte(); }
+      if(activeSection==='franelas'){ renderFranelas(); }
+      if(activeSection==='resumen'){ refreshAll(); }
+    }
+
+    function setupTabs(){
+      document.querySelectorAll('[data-t]').forEach(tab=>{
+        tab.addEventListener('click', ()=>{
+          document.querySelectorAll('[data-t]').forEach(t=>t.classList.remove('active'));
+          tab.classList.add('active');
+          transportFilter = tab.dataset.t;
+          renderTransporte();
+        });
+      });
+      document.querySelectorAll('[data-f]').forEach(tab=>{
+        tab.addEventListener('click', ()=>{
+          document.querySelectorAll('[data-f]').forEach(t=>t.classList.remove('active'));
+          tab.classList.add('active');
+          franelaFilter = tab.dataset.f;
+          renderFranelas();
+        });
+      });
+    }
+
+    // Toggle gráfico/ranking iglesias
+    function setupIglesiasToggle(){
+      const cont = byId('iglesiasViewTabs');
+      if(!cont) return;
+      cont.querySelectorAll('.chip').forEach(ch=>{
+        ch.addEventListener('click', ()=>{
+          cont.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+          ch.classList.add('active');
+          const v = ch.dataset.v;
+          byId('churchChartWrap').style.display = (v==='grafico') ? '' : 'none';
+          byId('rankingList').style.display = (v==='ranking') ? '' : 'none';
+        });
+      });
+    }
+
+    // Mic search
+    function setupMic(){
+      const btn = document.getElementById('micBtn');
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if(!SR){ btn.style.display='none'; return; }
+      const rec = new SR(); rec.lang='es-ES'; rec.interimResults=false; rec.maxAlternatives=1;
+      btn.addEventListener('click', ()=>{
+        try{
+          rec.start();
+        }catch(e){}
+      });
+      rec.onresult = (e)=>{
+        const t = e.results?.[0]?.[0]?.transcript || '';
+        if(t){ setSearch(t); toast('Búsqueda por voz'); }
+      };
+    }
+
+    // CSV
+    async function loadCSV(firstLoad=false, manual=false){
+      try{
+        const res = await fetch(CSV_URL, {cache:'no-store'});
+        const text = await res.text();
+        const newHash = hash(text);
+        const oldHash = localStorage.getItem(LS_CSV_HASH);
+        if(!oldHash || newHash!==oldHash){
+          localStorage.setItem(LS_CSV_TEXT, text);
+          localStorage.setItem(LS_CSV_HASH, newHash);
+          localStorage.setItem(LS_LAST_SYNC, String(Date.now()));
+          parseCSV(text, true);
+          if(!firstLoad) flashUpdated();
+        }else{
+          if(manual){ parseCSV(text, false); }
+        }
+        updateLastSync();
+      }catch(e){
+        console.warn('Error al cargar CSV desde red, usando cache si existe', e);
+        const cached = localStorage.getItem(LS_CSV_TEXT);
+        if(cached){
+          parseCSV(cached, false);
+          updateLastSync(true);
+          toast('Modo sin conexión');
+        }else{
+          console.error('No hay CSV en cache');
+        }
+      }
+    }
+
+    function parseCSV(text, refreshUI=true){
+      Papa.parse(text, {
+        header:true, skipEmptyLines:true,
+        complete: ({data})=>{
+          csvData = data.filter(r=>r && (r.Nombre || r.Apellido));
+          if(refreshUI){ refreshAll(); }
+        }
+      });
+    }
+
+    function flashUpdated(){
+      const b = document.getElementById('updatedBadge');
+      b.classList.add('show');
+      setTimeout(()=> b.classList.remove('show'), 1200);
+      try{ navigator.vibrate && navigator.vibrate(15); }catch(e){}
+    }
+    function updateLastSync(offline=false){
+      const t = localStorage.getItem(LS_LAST_SYNC);
+      if(!t){ document.getElementById('lastSync').textContent='—'; return; }
+      document.getElementById('lastSync').textContent = offline ? 'Cache' : ('Act. ' + timeAgo(Number(t)));
+    }
+
+    // Utilidades
+    const num = (v)=> isNaN(v)?0:Math.round(v);
+    const norm = (s)=> (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    function parseMoney(v){
+      if(v===null || v===undefined) return 0;
+      if(typeof v === 'number') return v;
+      const clean = String(v).replace(/[^\d.,-]/g,'').replace(',', '.');
+      const n = parseFloat(clean);
+      return isNaN(n)?0:n;
+    }
+    function formatMoney(n){
+      const int = Math.round(Number(n)||0);
+      return `${CURRENCY}${int.toLocaleString('es-ES')}`;
+    }
+    function hash(str){
+      let h = 5381; for(let i=0;i<str.length;i++){ h = ((h<<5)+h) + str.charCodeAt(i); h = h|0; }
+      return String(h);
+    }
+    function timeAgo(ts){
+      const sec = Math.max(1, Math.floor((Date.now()-ts)/1000));
+      if(sec<60) return `hace ${sec}s`;
+      const m = Math.floor(sec/60); if(m<60) return `hace ${m}m`;
+      const h = Math.floor(m/60); if(h<24) return `hace ${h}h`;
+      const d = Math.floor(h/24); return `hace ${d}d`;
+    }
+    function debounce(fn, ms){
+      let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); };
+    }
+
+    function isExonerado(edad){ const e=parseInt(edad); return !isNaN(e) && e<EXO_AGE; }
+
+    function getTransporteStatus(row){
+      const edad = parseInt(row.Edad);
+      if(isExonerado(edad)) return 'exonerado';
+      const m = parseMoney(row.Transporte);
+      if(m>=TRANSPORT_COST) return 'pagado';
+      if(m>0) return 'parcial';
+      return 'pendiente';
+    }
+    function getFranelaStatus(row){
+      const talla = (row.Talla||'').toString().trim();
+      const solicitada = talla !== '' && talla !== '-';
+      if(!solicitada) return 'no-solicitada';
+      const m = parseMoney(row.Franela);
+      if(m>=SHIRT_COST) return 'pagada';
+      if(m>0) return 'parcial';
+      return 'pendiente';
+    }
+
+    function sortByName(a,b){
+      const A = ((a.Apellido||'')+' '+(a.Nombre||'')).toLowerCase();
+      const B = ((b.Apellido||'')+' '+(b.Nombre||'')).toLowerCase();
+      return A.localeCompare(B);
+    }
+    function sortData(data, mode){
+      if(mode==='az'){ return data.sort(sortByName); }
+      if(mode==='edad-asc'){ return data.sort((a,b)=> (parseInt(a.Edad)||0) - (parseInt(b.Edad)||0) || sortByName(a,b)); }
+      if(mode==='edad-desc'){ return data.sort((a,b)=> (parseInt(b.Edad)||0) - (parseInt(a.Edad)||0) || sortByName(a,b)); }
+      return data;
+    }
+    function matchesSearch(row, q){
+      if(!q) return true;
+      const s = `${row.Nombre||''} ${row.Apellido||''} ${row.Iglesia||''} ${row.Talla||''} ${row['Pastor(a)']||''}`;
+      return norm(s).includes(norm(q));
+    }
+
+    // Cálculos
+    function computeStats(){
+      const iglesiasMap = {};
+      let total=0, ninos=0, mayores=0, pastores=0;
+      let tPag=0,tPar=0,tPen=0,tExo=0,tRec=0,tDeu=0;
+      let fSolic=0,fPag=0,fPar=0,fPen=0,fRec=0,fDeu=0;
+      const tallas = {};
+
+      csvData.forEach(r=>{
+        total++;
+        const edad = parseInt(r.Edad);
+        if(!isNaN(edad) && edad<13) ninos++;
+        if(!isNaN(edad) && edad>=60) mayores++;
+        if((r['Pastor(a)']||'').toString().trim().toUpperCase()==='SI') pastores++;
+
+        const ig = (r.Iglesia||'').toString().trim();
+        if(ig) iglesiasMap[ig] = (iglesiasMap[ig]||0)+1;
+
+        // Transporte
+        const ts = getTransporteStatus(r);
+        if(ts==='pagado') tPag++;
+        if(ts==='parcial') tPar++;
+        if(ts==='pendiente') tPen++;
+        if(ts==='exonerado') tExo++;
+
+        if(ts!=='exonerado'){
+          const pag = Math.min(TRANSPORT_COST, parseMoney(r.Transporte));
+          tRec += pag;
+          tDeu += Math.max(0, TRANSPORT_COST - pag);
         }
 
-        // Calcular estadísticas
-        function updateStatistics() {
-            if (!csvData.length) return;
-            
-            // Contadores
-            let totalAsistentes = 0;
-            let totalMayores = 0;
-            let totalPastores = 0;
-            let totalAsientos = 0;
-            let totalFranelaSolicitada = 0;
-            let totalFranelaPagada = 0;
-            let totalFranelaIncompleta = 0;
-            let totalFranelaPendiente = 0;
-            let totalTransportePagado = 0;
-            let totalTransporteIncompleto = 0;
-            let totalTransportePendiente = 0;
-            
-            // Iglesias únicas para el gráfico
-            const iglesias = {};
-            
-            csvData.forEach(row => {
-                if (row.Nombre || row.Apellido) totalAsistentes++;
-                
-                // Adultos mayores (≥60)
-                if (row.Edad && !isNaN(row.Edad) && parseInt(row.Edad) >= 60) {
-                    totalMayores++;
-                }
-                
-                // Pastores
-                if (row['Pastor(a)'] && row['Pastor(a)'].toUpperCase() === 'SI') {
-                    totalPastores++;
-                }
-                
-                // Asientos especiales
-                if (row.Asiento && row.Asiento.toUpperCase() === 'SI') {
-                    totalAsientos++;
-                }
-                
-                // Solicitaron franela (tienen talla)
-                const tieneTalla = row.Talla && row.Talla.trim() !== '' && row.Talla.trim() !== '-';
-                if (tieneTalla) {
-                    totalFranelaSolicitada++;
-                }
-                
-                // Estado de franela
-                const franela = row.Franela ? row.Franela.trim() : '';
-                if (franela === "5$") {
-                    totalFranelaPagada++;
-                } else if (franela === "2.5$" || franela === "3$") {
-                    totalFranelaIncompleta++;
-                } else if (tieneTalla && !franela.includes("$")) {
-                    totalFranelaPendiente++;
-                }
-                
-                // Transporte
-                const transporte = row.Transporte ? row.Transporte.trim() : '';
-                if (transporte === "2$") {
-                    totalTransportePagado++;
-                } else if (transporte === "1$") {
-                    totalTransporteIncompleto++;
-                } else if (transporte !== "") {
-                    totalTransportePendiente++;
-                } else {
-                    totalTransportePendiente++;
-                }
-                
-                // Contar iglesias para el gráfico
-                if (row.Iglesia) {
-                    iglesias[row.Iglesia] = (iglesias[row.Iglesia] || 0) + 1;
-                }
-            });
-            
-            // Actualizar UI
-            document.getElementById('total-asistentes').textContent = totalAsistentes;
-            document.getElementById('total-mayores').textContent = totalMayores;
-            document.getElementById('total-pastores').textContent = totalPastores;
-            document.getElementById('total-asientos').textContent = totalAsientos;
-            document.getElementById('total-franela').textContent = totalFranelaSolicitada;
-            document.getElementById('total-transporte-pagado').textContent = totalTransportePagado;
-            document.getElementById('total-transporte-pendiente').textContent = totalTransporteIncompleto + totalTransportePendiente;
-            document.getElementById('total-franela-pagada').textContent = totalFranelaPagada;
+        // Franelas
+        const fs = getFranelaStatus(r);
+        if(fs!=='no-solicitada'){
+          fSolic++;
+          const pagF = Math.min(SHIRT_COST, parseMoney(r.Franela));
+          if(fs==='pagada') fPag++;
+          if(fs==='parcial') fPar++;
+          if(fs==='pendiente') fPen++;
+          fRec += pagF;
+          fDeu += Math.max(0, SHIRT_COST - pagF);
+
+          const talla = (r.Talla||'').toString().trim().toUpperCase();
+          if(talla) tallas[talla] = (tallas[talla]||0)+1;
+        }
+      });
+
+      return {
+        total, ninos, mayores, pastores,
+        iglesias: iglesiasMap,
+        transporte:{pagado:tPag, parcial:tPar, pendiente:tPen, exonerado:tExo, recaudado:tRec, deuda:tDeu},
+        franelas:{solicitadas:fSolic, pagadas:fPag, parcial:fPar, pendientes:fPen, recaudado:fRec, deuda:fDeu, tallas}
+      };
+    }
+
+    // Render
+    function refreshAll(){
+      const stats = computeStats();
+      renderResumen(stats);
+      buildIglesiasChips(stats.iglesias);
+      if(activeSection==='listado'){ renderListado(); }
+      if(activeSection==='transporte'){ renderTransporte(stats); }
+      if(activeSection==='franelas'){ renderFranelas(stats); }
+      renderChart(stats.iglesias);
+      renderRanking(stats.iglesias);
+      checkMilestones(stats);
+    }
+
+    function renderResumen(stats){
+      // Totales
+      byId('sum-total').textContent = stats.total;
+      byId('sum-iglesias').textContent = Object.keys(stats.iglesias).length;
+      byId('sum-ninos').textContent = stats.ninos;
+      byId('sum-pastores').textContent = stats.pastores;
+      byId('sum-mayores').textContent = stats.mayores;
+      byId('sum-fran-solic').textContent = stats.franelas.solicitadas;
+
+      // Transporte
+      byId('sum-t-pagado').textContent = stats.transporte.pagado;
+      byId('sum-t-parcial').textContent = stats.transporte.parcial;
+      byId('sum-t-pend').textContent = stats.transporte.pendiente;
+      byId('sum-t-exo').textContent = stats.transporte.exonerado;
+      byId('sum-t-rec').textContent = formatMoney(stats.transporte.recaudado);
+      byId('sum-t-deuda').textContent = formatMoney(stats.transporte.deuda);
+
+      const tTotal = stats.transporte.recaudado + stats.transporte.deuda;
+      const pT = tTotal>0 ? Math.round(stats.transporte.recaudado*100/tTotal) : 0;
+      byId('progressTransporte').style.width = pT + '%';
+      byId('progressTransporteText').textContent = pT + '%';
+      byId('progressTransporte2').style.width = pT + '%';
+      byId('progressTransporte2Text').textContent = pT + '%';
+
+      // Franelas
+      byId('sum-f-solic').textContent = stats.franelas.solicitadas;
+      byId('sum-f-pagadas').textContent = stats.franelas.pagadas;
+      byId('sum-f-parcial').textContent = stats.franelas.parcial;
+      byId('sum-f-pend').textContent = stats.franelas.pendientes;
+      byId('sum-f-rec').textContent = formatMoney(stats.franelas.recaudado);
+      byId('sum-f-deuda').textContent = formatMoney(stats.franelas.deuda);
+
+      const fTotal = stats.franelas.recaudado + stats.franelas.deuda;
+      const pF = fTotal>0 ? Math.round(stats.franelas.recaudado*100/fTotal) : 0;
+      byId('progressFranelas').style.width = pF + '%';
+      byId('progressFranelasText').textContent = pF + '%';
+      byId('progressFranelas2').style.width = pF + '%';
+      byId('progressFranelas2Text').textContent = pF + '%';
+
+      // Buses estimados
+      const buses = Math.ceil((stats.total || 0)/Math.max(1, BUS_CAPACITY));
+      byId('busEstimados').textContent = buses;
+    }
+
+    function buildIglesiasChips(map){
+      const cont = byId('iglesiasChips');
+      cont.innerHTML = '';
+      const all = document.createElement('div');
+      all.className = 'chip' + (activeChurchListado===null?' active':'');
+      all.textContent = 'Todas';
+      all.onclick = ()=>{ activeChurchListado=null; buildIglesiasChips(map); renderListado(); };
+      cont.appendChild(all);
+
+      Object.entries(map).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([name,count])=>{
+        const c = document.createElement('div');
+        c.className = 'chip' + (activeChurchListado===name?' active':'');
+        c.textContent = `${name} (${count})`;
+        c.onclick = ()=>{ activeChurchListado=name; buildIglesiasChips(map); renderListado(); };
+        cont.appendChild(c);
+      });
+    }
+
+    function renderListado(){
+      const list = byId('listado');
+      const countEl = byId('listadoCount');
+      let data = [...csvData];
+      if(activeChurchListado){
+        data = data.filter(r => (r.Iglesia||'').toString().trim()===activeChurchListado);
+      }
+      if(searchQuery){ data = data.filter(r=> matchesSearch(r, searchQuery)); }
+      data = sortData(data, listadoSort);
+      countEl.textContent = `${data.length} persona${data.length===1?'':'s'}`;
+      list.innerHTML = '';
+      if(data.length===0){
+        list.innerHTML = `<div class="meta">No hay personas para mostrar</div>`;
+        return;
+      }
+      data.forEach(r=>{
+        const edad = r.Edad?`${r.Edad} años`:'';
+        const badges = [];
+        if((r['Pastor(a)']||'').toString().trim().toUpperCase()==='SI') badges.push(`<span class="badge b-primary">Pastor</span>`);
+        const e = parseInt(r.Edad);
+        if(!isNaN(e) && e<13) badges.push(`<span class="badge b-info">Niño</span>`);
+        if(!isNaN(e) && e>=60) badges.push(`<span class="badge b-warn">Mayor</span>`);
+
+        const ts = getTransporteStatus(r);
+        badges.push(
+          ts==='exonerado'?`<span class="badge b-info">T. Exonerado</span>`:
+          ts==='pagado'?`<span class="badge b-success">T. Pagado</span>`:
+          ts==='parcial'?`<span class="badge b-warn">T. Parcial</span>`:
+          `<span class="badge b-danger">T. Pendiente</span>`
+        );
+
+        const fs = getFranelaStatus(r);
+        if(fs!=='no-solicitada'){
+          badges.push(
+            fs==='pagada'?`<span class="badge b-success">F. Pagada</span>`:
+            fs==='parcial'?`<span class="badge b-warn">F. Parcial</span>`:
+            `<span class="badge b-danger">F. Pendiente</span>`
+          );
+          if((r.Talla||'').toString().trim()) badges.push(`<span class="badge b-info">Talla ${r.Talla}</span>`);
         }
 
-        // Crear gráfico de distribución por iglesia
-        function updateChart() {
-            if (!csvData.length) return;
-            
-            const iglesias = {};
-            csvData.forEach(row => {
-                if (row.Iglesia) {
-                    iglesias[row.Iglesia] = (iglesias[row.Iglesia] || 0) + 1;
-                }
-            });
-            
-            const ctx = document.getElementById('church-chart').getContext('2d');
-            const labels = Object.keys(iglesias);
-            const data = Object.values(iglesias);
-            
-            // Destruir gráfico anterior si existe
-            if (churchChart) {
-                churchChart.destroy();
-            }
-            
-            // Crear nuevo gráfico
-            churchChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: [
-                            '#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6',
-                            '#1abc9c', '#d35400', '#c0392b', '#16a085', '#8e44ad',
-                            '#27ae60', '#2980b9', '#f1c40f', '#e67e22', '#34495e'
-                        ],
-                        borderWidth: 1,
-                        hoverOffset: 20
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                font: {
-                                    size: 13
-                                },
-                                padding: 20,
-                                usePointStyle: true,
-                                pointStyle: 'circle'
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.raw || 0;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = Math.round((value / total) * 100);
-                                    return `${label}: ${value} (${percentage}%)`;
-                                }
-                            }
-                        }
-                    },
-                    cutout: '60%',
-                    animation: {
-                        animateRotate: true,
-                        animateScale: true
-                    }
-                }
-            });
-        }
+        const item = document.createElement('div');
+        item.className = 'item';
+        item.innerHTML = `
+          <div>
+            <div class="name">${(r.Nombre||'')} ${(r.Apellido||'')}</div>
+            <div class="meta">${r.Iglesia||''}</div>
+            <div class="badges">${badges.join(' ')}</div>
+          </div>
+          <div class="meta">${edad}</div>
+        `;
+        list.appendChild(item);
+      });
+    }
 
-        // Crear filtros
-        function createFilters() {
-            if (!csvData.length) return;
-            
-            const churchFiltersContainer = document.getElementById('church-filters');
-            const transporteFiltersContainer = document.getElementById('transporte-filters');
-            const franelaFiltersContainer = document.getElementById('franela-filters');
-            const otherFiltersContainer = document.getElementById('other-filters');
-            
-            churchFiltersContainer.innerHTML = '';
-            transporteFiltersContainer.innerHTML = '';
-            franelaFiltersContainer.innerHTML = '';
-            otherFiltersContainer.innerHTML = '';
-            
-            // Filtro por iglesia (recopilar iglesias únicas)
-            const uniqueChurches = [...new Set(csvData.map(row => row.Iglesia).filter(Boolean))];
-            
-            // Botón para cada iglesia
-            uniqueChurches.forEach(church => {
-                const button = document.createElement('button');
-                button.className = 'filter-btn';
-                button.innerHTML = `<span class="indicator"></span> ${church}`;
-                button.dataset.filter = 'iglesia';
-                button.dataset.value = church;
-                button.addEventListener('click', () => toggleFilter('iglesia', church));
-                churchFiltersContainer.appendChild(button);
-            });
-            
-            // Filtros de transporte
-            const transporteFilters = [
-                { id: 'transportePagado', label: 'Pagado', icon: 'fas fa-check-circle' },
-                { id: 'transporteIncompleto', label: 'Incompleto', icon: 'fas fa-exclamation-circle' },
-                { id: 'transportePendiente', label: 'Pendiente', icon: 'fas fa-times-circle' }
-            ];
-            
-            transporteFilters.forEach(filter => {
-                const button = document.createElement('button');
-                button.className = 'filter-btn';
-                button.innerHTML = `<i class="${filter.icon}"></i> <span class="indicator"></span> ${filter.label}`;
-                button.dataset.filter = filter.id;
-                button.addEventListener('click', () => toggleFilter(filter.id));
-                transporteFiltersContainer.appendChild(button);
-            });
-            
-            // Filtros de franela
-            const franelaFilters = [
-                { id: 'franelaPagada', label: 'Pagada (5$)', icon: 'fas fa-check-circle' },
-                { id: 'franelaIncompleta', label: 'Incompleta', icon: 'fas fa-exclamation-circle' },
-                { id: 'franelaPendiente', label: 'Pendiente', icon: 'fas fa-times-circle' }
-            ];
-            
-            franelaFilters.forEach(filter => {
-                const button = document.createElement('button');
-                button.className = 'filter-btn';
-                button.innerHTML = `<i class="${filter.icon}"></i> <span class="indicator"></span> ${filter.label}`;
-                button.dataset.filter = filter.id;
-                button.addEventListener('click', () => toggleFilter(filter.id));
-                franelaFiltersContainer.appendChild(button);
-            });
-            
-            // Otros filtros
-            const otherFilters = [
-                { id: 'pastores', label: 'Pastores', icon: 'fas fa-pray' },
-                { id: 'niños', label: 'Niños (<12)', icon: 'fas fa-child' },
-                { id: 'asientos', label: 'Asientos Prioritarios', icon: 'fas fa-wheelchair' }
-            ];
-            
-            otherFilters.forEach(filter => {
-                const button = document.createElement('button');
-                button.className = 'filter-btn';
-                button.innerHTML = `<i class="${filter.icon}"></i> <span class="indicator"></span> ${filter.label}`;
-                button.dataset.filter = filter.id;
-                button.addEventListener('click', () => toggleFilter(filter.id));
-                otherFiltersContainer.appendChild(button);
-            });
-            
-            // Actualizar estado visual de los botones
-            updateFilterButtons();
-        }
+    function renderTransporte(stats = computeStats()){
+      // cifras
+      byId('t-pagado').textContent = stats.transporte.pagado;
+      byId('t-parcial').textContent = stats.transporte.parcial;
+      byId('t-pendiente').textContent = stats.transporte.pendiente;
+      byId('t-exonerado').textContent = stats.transporte.exonerado;
+      byId('t-recaudado').textContent = formatMoney(stats.transporte.recaudado);
+      byId('t-deuda').textContent = formatMoney(stats.transporte.deuda);
 
-        // Alternar filtros
-        function toggleFilter(filterType, value = null) {
-            if (filterType === 'iglesia') {
-                // Si ya está seleccionada, deseleccionar
-                if (activeFilters.iglesia === value) {
-                    activeFilters.iglesia = null;
-                } else {
-                    activeFilters.iglesia = value;
-                }
-            } else {
-                // Alternar filtro booleano
-                activeFilters[filterType] = !activeFilters[filterType];
-            }
-            
-            // Actualizar estado visual de los botones
-            updateFilterButtons();
-            
-            // Volver a renderizar la tabla con los filtros aplicados
-            renderTable();
-        }
+      const tTotal = stats.transporte.recaudado + stats.transporte.deuda;
+      const pT = tTotal>0 ? Math.round(stats.transporte.recaudado*100/tTotal) : 0;
+      byId('progressTransporte2').style.width = pT + '%';
+      byId('progressTransporte2Text').textContent = pT + '%';
 
-        // Actualizar estado visual de los botones de filtro
-        function updateFilterButtons() {
-            const buttons = document.querySelectorAll('.filter-btn');
-            
-            buttons.forEach(button => {
-                const filterType = button.dataset.filter;
-                const filterValue = button.dataset.value;
-                
-                button.classList.remove('active');
-                
-                if (filterType === 'iglesia') {
-                    if (activeFilters.iglesia === filterValue) {
-                        button.classList.add('active');
-                    }
-                } else {
-                    if (activeFilters[filterType]) {
-                        button.classList.add('active');
-                    }
-                }
-            });
-        }
+      const cont = byId('listaTransporte');
+      let data = csvData.filter(r=>{
+        const s = getTransporteStatus(r);
+        if(transportFilter==='todos') return true;
+        return s===transportFilter;
+      });
+      if(searchQuery){ data = data.filter(r=> matchesSearch(r, searchQuery)); }
+      data = sortData(data, transporteSort);
 
-        // Renderizar tabla con filtros aplicados
-        function renderTable() {
-            if (!csvData.length) return;
-            
-            const tableBody = document.getElementById('table-body');
-            let filteredData = [...csvData];
-            
-            // Aplicar filtros
-            if (activeFilters.iglesia) {
-                filteredData = filteredData.filter(row => row.Iglesia === activeFilters.iglesia);
-            }
-            
-            // Filtros de transporte
-            if (activeFilters.transportePagado) {
-                filteredData = filteredData.filter(row => {
-                    const transporte = row.Transporte ? row.Transporte.trim() : '';
-                    return transporte === "2$";
-                });
-            }
-            
-            if (activeFilters.transporteIncompleto) {
-                filteredData = filteredData.filter(row => {
-                    const transporte = row.Transporte ? row.Transporte.trim() : '';
-                    return transporte === "1$";
-                });
-            }
-            
-            if (activeFilters.transportePendiente) {
-                filteredData = filteredData.filter(row => {
-                    const transporte = row.Transporte ? row.Transporte.trim() : '';
-                    return transporte !== "2$" && transporte !== "1$";
-                });
-            }
-            
-            // Filtros de franela
-            if (activeFilters.franelaPagada) {
-                filteredData = filteredData.filter(row => {
-                    const franela = row.Franela ? row.Franela.trim() : '';
-                    return franela === "5$";
-                });
-            }
-            
-            if (activeFilters.franelaIncompleta) {
-                filteredData = filteredData.filter(row => {
-                    const franela = row.Franela ? row.Franela.trim() : '';
-                    return franela === "2.5$" || franela === "3$";
-                });
-            }
-            
-            if (activeFilters.franelaPendiente) {
-                filteredData = filteredData.filter(row => {
-                    const franela = row.Franela ? row.Franela.trim() : '';
-                    const tieneTalla = row.Talla && row.Talla.trim() !== '' && row.Talla.trim() !== '-';
-                    return tieneTalla && !franela.includes("$");
-                });
-            }
-            
-            // Otros filtros
-            if (activeFilters.pastores) {
-                filteredData = filteredData.filter(row => 
-                    row['Pastor(a)'] && row['Pastor(a)'].toUpperCase() === 'SI'
-                );
-            }
-            
-            if (activeFilters.niños) {
-                filteredData = filteredData.filter(row => 
-                    row.Edad && !isNaN(row.Edad) && parseInt(row.Edad) < 12
-                );
-            }
-            
-            if (activeFilters.asientos) {
-                filteredData = filteredData.filter(row => 
-                    row.Asiento && row.Asiento.toUpperCase() === 'SI'
-                );
-            }
-            
-            // Ordenar alfabéticamente por apellido y luego por nombre
-            filteredData.sort((a, b) => {
-                // Primero por apellido
-                const apellidoA = (a.Apellido || '').toLowerCase();
-                const apellidoB = (b.Apellido || '').toLowerCase();
-                
-                if (apellidoA < apellidoB) return -1;
-                if (apellidoA > apellidoB) return 1;
-                
-                // Si los apellidos son iguales, ordenar por nombre
-                const nombreA = (a.Nombre || '').toLowerCase();
-                const nombreB = (b.Nombre || '').toLowerCase();
-                
-                if (nombreA < nombreB) return -1;
-                if (nombreA > nombreB) return 1;
-                
-                return 0;
-            });
-            
-            // Generar filas de la tabla
-            tableBody.innerHTML = '';
-            
-            if (filteredData.length === 0) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="9" class="no-results">No se encontraron asistentes con los filtros seleccionados</td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            // Generar números secuenciales para la columna #
-            filteredData.forEach((row, index) => {
-                const tr = document.createElement('tr');
-                
-                // Determinar clases para badges
-                const pastorClass = row['Pastor(a)'] && row['Pastor(a)'].toUpperCase() === 'SI' ? 'badge badge-primary' : '';
-                const tieneTalla = row.Talla && row.Talla.trim() !== '' && row.Talla.trim() !== '-';
-                
-                // Determinar estado del transporte
-                let transporteBadge = '';
-                const transporte = row.Transporte ? row.Transporte.trim() : '';
-                if (transporte === "2$") {
-                    transporteBadge = `<span class="badge badge-success">Pagado</span>`;
-                } else if (transporte === "1$") {
-                    transporteBadge = `<span class="badge badge-warning">Incompleto</span>`;
-                } else if (transporte) {
-                    transporteBadge = `<span class="badge badge-danger">Pendiente: ${transporte}</span>`;
-                } else {
-                    transporteBadge = `<span class="badge badge-danger">Pendiente</span>`;
-                }
-                
-                // Determinar estado de la franela
-                let franelaBadge = '';
-                const franela = row.Franela ? row.Franela.trim() : '';
-                if (tieneTalla) {
-                    if (franela === "5$") {
-                        franelaBadge = `<span class="badge badge-success">Pagada</span>`;
-                    } else if (franela === "2.5$" || franela === "3$") {
-                        franelaBadge = `<span class="badge badge-warning">Incompleta</span>`;
-                    } else if (franela) {
-                        franelaBadge = `<span class="badge badge-danger">Pendiente: ${franela}</span>`;
-                    } else {
-                        franelaBadge = `<span class="badge badge-danger">Pendiente</span>`;
-                    }
-                } else {
-                    franelaBadge = `<span class="badge badge-purple">No solicitada</span>`;
-                }
-                
-                tr.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td><strong>${row.Iglesia || ''}</strong></td>
-                    <td>${row.Nombre || ''}</td>
-                    <td>${row.Apellido || ''}</td>
-                    <td>${row.Edad || ''}</td>
-                    <td><span class="${pastorClass}">${row['Pastor(a)'] || ''}</span></td>
-                    <td>${row.Talla || ''}</td>
-                    <td>${transporteBadge}</td>
-                    <td>${franelaBadge}</td>
-                `;
-                tableBody.appendChild(tr);
-            });
-        }
+      cont.innerHTML='';
+      if(data.length===0){ cont.innerHTML = `<div class="meta">Sin resultados</div>`; return; }
 
-        // Cargar los datos cuando la página esté lista
-        document.addEventListener('DOMContentLoaded', loadCSV);
-        
-        // Recargar datos cada 5 minutos para mantener actualizado
-        setInterval(loadCSV, 300000);
-    </script>
+      data.forEach(r=>{
+        const s = getTransporteStatus(r);
+        const b = s==='exonerado'?`<span class="badge b-info">Exonerado</span>`:
+                  s==='pagado'?`<span class="badge b-success">Pagado</span>`:
+                  s==='parcial'?`<span class="badge b-warn">Parcial</span>`:
+                  `<span class="badge b-danger">Pendiente</span>`;
+        const pag = s==='exonerado'?0:Math.min(TRANSPORT_COST, parseMoney(r.Transporte));
+        const deuda = s==='exonerado'?0:Math.max(0, TRANSPORT_COST - pag);
+
+        const item = document.createElement('div');
+        item.className = 'item';
+        item.innerHTML = `
+          <div>
+            <div class="name">${(r.Nombre||'')} ${(r.Apellido||'')}</div>
+            <div class="meta">${r.Iglesia||''}</div>
+            <div class="badges">${b} <span class="badge b-info">${CURRENCY}${num(pag)}</span> ${deuda?`<span class="badge b-danger">-${CURRENCY}${num(deuda)}</span>`:''}</div>
+          </div>
+          <div class="meta">${r.Edad?`${r.Edad} años`:''}</div>
+        `;
+        cont.appendChild(item);
+      });
+    }
+
+    function renderFranelas(stats = computeStats()){
+      byId('f-solicitadas').textContent = stats.franelas.solicitadas;
+      byId('f-pagadas').textContent = stats.franelas.pagadas;
+      byId('f-parcial').textContent = stats.franelas.parcial;
+      byId('f-pendientes').textContent = stats.franelas.pendientes;
+      byId('f-recaudado').textContent = formatMoney(stats.franelas.recaudado);
+      byId('f-deuda').textContent = formatMoney(stats.franelas.deuda);
+
+      const fTotal = stats.franelas.recaudado + stats.franelas.deuda;
+      const pF = fTotal>0 ? Math.round(stats.franelas.recaudado*100/fTotal) : 0;
+      byId('progressFranelas2').style.width = pF + '%';
+      byId('progressFranelas2Text').textContent = pF + '%';
+
+      // tallas
+      const tg = byId('tallasGrid');
+      tg.innerHTML='';
+      const order = ['XS','S','M','L','XL','XXL','XXXL','2XL','3XL'];
+      Object.entries(stats.franelas.tallas)
+        .sort((a,b)=> order.indexOf(a[0]) - order.indexOf(b[0]))
+        .forEach(([t,c])=>{
+          const d = document.createElement('div');
+          d.className='mini';
+          d.innerHTML = `<div class="icon">👕</div><div class="label">Talla ${t}</div><div class="value">${c}</div>`;
+          tg.appendChild(d);
+        });
+      if(!tg.children.length){ tg.innerHTML = `<div class="meta">Sin tallas registradas</div>`; }
+
+      // lista
+      const cont = byId('listaFranelas');
+      let data = csvData.filter(r=> getFranelaStatus(r)!=='no-solicitada');
+      if(franelaFilter!=='todos'){
+        data = data.filter(r=> getFranelaStatus(r)===franelaFilter);
+      }
+      if(searchQuery){ data = data.filter(r=> matchesSearch(r, searchQuery)); }
+      data = sortData(data, franelasSort);
+      cont.innerHTML='';
+      if(data.length===0){ cont.innerHTML = `<div class="meta">Sin resultados</div>`; return; }
+
+      data.forEach(r=>{
+        const s = getFranelaStatus(r);
+        const b = s==='pagada'?`<span class="badge b-success">Pagada</span>`:
+                  s==='parcial'?`<span class="badge b-warn">Parcial</span>`:
+                  `<span class="badge b-danger">Pendiente</span>`;
+        const pag = Math.min(SHIRT_COST, parseMoney(r.Franela));
+        const deuda = Math.max(0, SHIRT_COST - pag);
+        const talla = (r.Talla||'').toString().trim();
+
+        const item = document.createElement('div');
+        item.className='item';
+        item.innerHTML = `
+          <div>
+            <div class="name">${(r.Nombre||'')} ${(r.Apellido||'')}</div>
+            <div class="meta">${r.Iglesia||''}</div>
+            <div class="badges">${b} ${talla?`<span class="badge b-info">Talla ${talla}</span>`:''} <span class="badge b-info">${CURRENCY}${num(pag)}</span> ${deuda?`<span class="badge b-danger">-${CURRENCY}${num(deuda)}</span>`:''}</div>
+          </div>
+          <div class="meta">${r.Edad?`${r.Edad} años`:''}</div>
+        `;
+        cont.appendChild(item);
+      });
+    }
+
+    // Paleta marcada y combinada con la app
+    function brandPalette(n){
+      const base = [
+        '#3b82f6','#22c55e','#f59e0b','#a78bfa','#06b6d4','#ef4444',
+        '#84cc16','#f97316','#10b981','#6366f1','#e11d48','#14b8a6',
+        '#8b5cf6','#0ea5e9','#f43f5e','#65a30d'
+      ];
+      return Array.from({length:n}, (_,i)=> base[i%base.length]);
+    }
+
+    function renderChart(iglesiasMap){
+      const labels = Object.keys(iglesiasMap);
+      const data = Object.values(iglesiasMap);
+      const ctx = document.getElementById('churchChart').getContext('2d');
+      if(churchChart) churchChart.destroy();
+
+      const palette = brandPalette(labels.length);
+
+      churchChart = new Chart(ctx, {
+        type:'doughnut',
+        data:{
+          labels: labels.map((l,i)=> `${l} (${data[i]})`),
+          datasets:[{
+            data,
+            backgroundColor: palette,
+            borderColor:'#ffffff',
+            borderWidth:2
+          }]
+        },
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          cutout:'60%',
+          plugins:{
+            legend:{ position:'bottom', labels:{ color:getVar('--text','#0f172a'), font:{size:12} } },
+            tooltip:{
+              bodyColor:getVar('--text','#0f172a'),
+              titleColor:getVar('--text','#0f172a'),
+              callbacks:{
+                label: (ctx)=>{
+                  const value = ctx.raw;
+                  const total = data.reduce((a,b)=>a+b,0)||1;
+                  const p = Math.round(value*100/total);
+                  return ` ${value} asistentes (${p}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderRanking(iglesiasMap){
+      const list = byId('rankingList');
+      list.innerHTML = '';
+      const entries = Object.entries(iglesiasMap).sort((a,b)=> b[1]-a[1]);
+      if(entries.length===0){ list.innerHTML = `<div class="meta">Sin datos</div>`; return; }
+      const top = entries[0][1] || 1;
+      const medals = ['🥇','🥈','🥉'];
+
+      entries.forEach(([name, count], idx)=>{
+        const item = document.createElement('div');
+        item.className = 'item';
+        const w = Math.max(10, Math.round(count*100/top));
+        item.innerHTML = `
+          <div style="flex:1">
+            <div class="name">${idx<3?`<span class="medal">${medals[idx]}</span>`:''}${name}</div>
+            <div class="progress-sm" style="margin-top:6px"><i style="width:${w}%"></i></div>
+          </div>
+          <div class="value" style="font-weight:800">${count}</div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    // Hero helpers
+    const pad2 = (n)=> String(n).padStart(2,'0');
+    function updateCountdown(){
+      const target = new Date('2025-09-07T07:00:00');
+      const now = new Date();
+      const diff = target - now;
+
+      if(diff<=0){
+        byId('countdown').innerHTML = `<div class="timer">
+          <div class="timebox"><div class="timeval">¡</div><div class="timelabel">es</div></div>
+          <div class="timebox"><div class="timeval">H</div><div class="timelabel">oy</div></div>
+          <div class="timebox"><div class="timeval">!</div><div class="timelabel">🎉</div></div>
+          <div class="timebox"><div class="timeval">🎊</div><div class="timelabel"></div></div>
+        </div>`;
+        return;
+      }
+
+      const d = Math.floor(diff/86400000);
+      const h = Math.floor((diff%86400000)/3600000);
+      const m = Math.floor((diff%3600000)/60000);
+      const s = Math.floor((diff%60000)/1000);
+
+      byId('countdown').innerHTML = `
+        <div class="timer">
+          <div class="timebox"><div class="timeval">${d}</div><div class="timelabel">días</div></div>
+          <div class="timebox"><div class="timeval">${pad2(h)}</div><div class="timelabel">hrs</div></div>
+          <div class="timebox"><div class="timeval">${pad2(m)}</div><div class="timelabel">min</div></div>
+          <div class="timebox"><div class="timeval">${pad2(s)}</div><div class="timelabel">seg</div></div>
+        </div>
+      `;
+    }
+
+    // Share
+    async function shareSummary(){
+      const s = computeStats();
+      const totalIglesias = Object.keys(s.iglesias).length;
+      const lineas = [
+        '🏕️ Campamento 2025',
+        `Asistentes: ${s.total}  •  Iglesias: ${totalIglesias}`,
+        `Niños: ${s.ninos}  •  Mayores: ${s.mayores}  •  Pastores: ${s.pastores}`,
+        `Transporte → Pagado: ${s.transporte.pagado}, Parcial: ${s.transporte.parcial}, Pendiente: ${s.transporte.pendiente}, Exonerado: ${s.transporte.exonerado}`,
+        `Transporte → Recaudado: ${formatMoney(s.transporte.recaudado)}, Pendiente: ${formatMoney(s.transporte.deuda)}`,
+        `Franelas → Solicitadas: ${s.franelas.solicitadas}, Pagadas: ${s.franelas.pagadas}, Parcial: ${s.franelas.parcial}, Pendiente: ${s.franelas.pendientes}`,
+        `Franelas → Recaudado: ${formatMoney(s.franelas.recaudado)}, Pendiente: ${formatMoney(s.franelas.deuda)}`
+      ];
+      const text = lineas.join('\n');
+      if(navigator.share){
+        try{ await navigator.share({ title:'Campamento 2025', text }); }
+        catch(e){}
+      }else{
+        await navigator.clipboard.writeText(text);
+        toast('Resumen copiado al portapapeles');
+      }
+    }
+
+    // Hitos y confetti
+    function getMilestones(){ try{ return JSON.parse(localStorage.getItem(LS_MILESTONES)||'{}'); }catch(e){ return {}; } }
+    function setMilestone(key){ const m=getMilestones(); m[key]=true; localStorage.setItem(LS_MILESTONES, JSON.stringify(m)); }
+    function notDone(key){ const m=getMilestones(); return !m[key]; }
+
+    function confettiBurst(pieces=70){
+      const colors = ['#f59e0b','#ef4444','#10b981','#3b82f6','#a78bfa','#f472b6','#84cc16','#06b6d4'];
+      for(let i=0;i<pieces;i++){
+        const el = document.createElement('div');
+        el.className='confetti';
+        el.style.left = Math.random()*100 + 'vw';
+        el.style.backgroundColor = colors[i%colors.length];
+        el.style.setProperty('--dur', (1000+Math.random()*1200)+'ms');
+        el.style.setProperty('--delay', (Math.random()*250)+'ms');
+        el.style.setProperty('--rot', (500+Math.random()*900)+'ms');
+        document.body.appendChild(el);
+        setTimeout(()=> el.remove(), 2500);
+      }
+    }
+
+    function checkMilestones(s){
+      const pT = (s.transporte.recaudado + s.transporte.deuda) ? Math.round(s.transporte.recaudado*100/(s.transporte.recaudado + s.transporte.deuda)) : 0;
+      const pF = (s.franelas.recaudado + s.franelas.deuda) ? Math.round(s.franelas.recaudado*100/(s.franelas.recaudado + s.franelas.deuda)) : 0;
+
+      const milestones = [
+        {key:'asist-50',  ok: s.total>=50,  msg:'¡50 asistentes! 🎉'},
+        {key:'asist-100', ok: s.total>=100, msg:'¡100 asistentes! 🙌'},
+        {key:'trans-80',  ok: pT>=80,       msg:'Transporte 80% pagado 💪'},
+        {key:'fran-80',   ok: pF>=80,       msg:'Franelas 80% pagadas 👕✨'}
+      ];
+      milestones.forEach(m=>{
+        if(m.ok && notDone(m.key)){
+          setMilestone(m.key);
+          confettiBurst();
+          toast(m.msg);
+        }
+      });
+    }
+
+    // Helpers
+    function byId(id){ return document.getElementById(id); }
+    function getVar(name, fallback){ return getComputedStyle(document.documentElement).getPropertyValue(name) || fallback; }
+    function toast(msg){
+      const t = byId('toast'); byId('toastMsg').textContent = msg;
+      t.classList.add('show');
+      setTimeout(()=> t.classList.remove('show'), 1600);
+    }
+  </script>
 </body>
 </html>
